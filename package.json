@@ -1,0 +1,15 @@
+{
+  "name": "my-first-slackbot",
+  "private": true,
+  "version": "0.0.0",
+  "description": "JS1: My First Slackbot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "botkit": "^0.2.0",
+    "dotenv": "^2.0.0"
+  }
+}
