@@ -58,7 +58,7 @@ controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
   if (doorType === 'pod bay') {
     return bot.reply(message, 'I\'m sorry, Dave. I\'m afraid I can\'t do that.');
   }
-  return bot.reply(message, z );
+  return bot.reply(message, okay[r()] );
 
 });
 
@@ -70,7 +70,7 @@ controller.on('ambient',function(bot,message) {
 
     // then respond with a message object
     //
-    bot.reply(message,{
+    bot.reply(message, {
       text: "A more complex response",
       username: "ReplyBot",
       icon_emoji: ":dash:",
@@ -79,6 +79,7 @@ controller.on('ambient',function(bot,message) {
 });
 
 
+/*
 controller.hears(['hd'], ['mention'], function(bot, message){
 	
 	bot.reply(message, {
@@ -88,3 +89,67 @@ controller.hears(['hd'], ['mention'], function(bot, message){
 	});
 
 });
+
+*/
+
+
+
+controller.hears(['what is the date'], ['ambient'], function(bot, message){
+	
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1; //January is 0!
+	var yyyy = today.getFullYear();
+
+	var showDate = (dd + ' / ' + mm + ' / ' + yyyy).toString();
+	bot.reply(message, showDate);
+
+});
+
+
+
+controller.hears(['what day is it'], ['ambient'], function(bot, message){
+	
+	var d = new Date();
+    var n = d.getDay();
+    var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ]
+
+	bot.reply(message, days[(n-1)]);
+
+});
+
+
+
+
+controller.on('direct_message,direct_mention', function(bot,message) {
+  var reply_with_attachments = {
+    'username': 'My bot' ,
+    'text': 'This is a pre-text',
+    'attachments': [
+      {
+        'fallback': 'To be useful, I need you to invite me in a channel.',
+        'title': 'How can I help you?',
+        'text': 'To be useful, I need you to invite me in a channel ',
+        'color': '#7CD197',
+        'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png'
+      }
+    ],
+    'icon_url': 'http://lorempixel.com/48/48'
+    }
+
+  bot.reply(message, reply_with_attachments);
+});
+
+
+
+
+controller.hears(['jquery'], ['ambient'], function(bot, message){
+	
+	bot.reply(message, {
+		text: "jQuery is awesome!",
+		username: 'Jess-Bot',
+		icon_url: "https://pbs.twimg.com/profile_images/535601713659400193/bu3qboL9.png",
+	});
+});
+
+
