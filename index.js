@@ -223,8 +223,33 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 
 	})
 
-})
+});
 
+
+controller.hears('random emoji', 'ambient', function(bot, message){
+
+	bot.api.emoji.list({}, function(err, response){
+		if (err) {
+			bot.botkit.log('something went wrong', err)
+		}
+		var emojiKeys = Object.keys(response.emoji)
+		var emojiLength = emojiKeys.length
+		bot.botkit.log('emoji:', (response.emoji[emojiKeys[randomNumber(emojiLength)-1]]) )
+		var rE = emojiKeys[randomNumber(emojiLength)-1]
+		var randomEmoji = response.emoji[rE];
+		var output = {
+			'attachments': [
+				{
+					'title': 'Your random emoji is',
+					'text': rE,
+					'image_url': randomEmoji
+				}
+			]
+		}
+		bot.reply(message, output)
+	});
+
+})
 
 
 
@@ -261,6 +286,10 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 			{
 				'title': 'Get all user names',
 				'text': 'tpye "user list" to list all users and bots in js1syd'
+			},
+			{
+				'title': 'Random emoji',
+				'text': 'Display a random emoji character'
 			}
 			
 
