@@ -174,7 +174,7 @@ Go check out Slack; your bot should now be listening.
 
 To stop it running, type `<Ctrl-C>` on the command line.
 
-### Adcanced Usage
+### Advanced Usage
 
 Botkit provides lots of great ways to interact with Slack and its users. [Read
 the

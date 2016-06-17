@@ -9,7 +9,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "botkit": "^0.2.0",
+    "botkit": "^0.2.1",
     "dotenv": "^2.0.0"
   }
 }
