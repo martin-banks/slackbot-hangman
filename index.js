@@ -30,7 +30,7 @@ bot.startRTM(function(error, whichBot, payload) {
 
 
 var randomNumber = function(param){
-	return (Math.floor(Math.random()*param))+1
+	return (Math.floor(Math.random()*param))
 }
 
 
@@ -171,7 +171,64 @@ controller.hears(['ultimate question'], ['direct_mention'], function(bot, messag
 	return bot.reply(message, response )
 })
 
+/*
+controller.on( 'user_typing', function(bot, message){
+	var response = [
+		'Yes?',
+		'i\'m waiting',
+		'type quicker',
+		'tick tock',
+		'Would you liek to hear a joke while we wait?',
+		'This must be a very long message',
+		'That\'s very interesting',
+		'i see your point'
+	]
+	var responseNew = function(){
+		var r = randomNumber(10)
+		if (r>5){
+			return response[randomNumber((response.length))]
+		} 
+	}
+	
+	bot.reply(message, responseNew() )
+} );
+*/
 
+
+
+controller.hears(['user list'], ['ambient'], function(bot, message){
+
+	bot.api.users.list({},function(err,response) {
+		if (err) {
+			bot.botkit.log('something went wrong', err);
+		}
+
+		var userList = [];
+		var l = response.members.length;
+		bot.botkit.log('number of users:', l);
+		var numberofUsers = 'number of users' + (l.toString())
+		bot.reply(message, numberofUsers );
+
+		for(var i=0; i<=l; i++){
+			if(i===l){
+				var output = userList.join('\n');
+				bot.reply(message, output);
+			} else {
+				var userName = response.members[i].name
+				userList.push(userName);
+				bot.botkit.log('user name:', userName);
+				//bot.reply(message, userName );
+			}	
+		}
+
+	})
+
+})
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 controller.hears(['what can you do'],['mention'], function(bot, message){
 	var botCommands = {
@@ -196,6 +253,10 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 			{
 				'title': '"@clydebot: what is the answer to the ultimate question"',
 				'text': 'You know what comes next... \n use toString() on a previously created varible to return a number (as a string) into the chat'
+			},
+			{
+				'title': 'While you\'re typing',
+				'text': 'Randomly return a random message while user types'
 			}
 			
 
@@ -203,4 +264,4 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 	}
 	return bot.reply(message, botCommands)
 
-})
+});
