@@ -178,7 +178,7 @@ controller.on( 'user_typing', function(bot, message){
 		'i\'m waiting',
 		'type quicker',
 		'tick tock',
-		'Would you liek to hear a joke while we wait?',
+		'Would you like to hear a joke while we wait?',
 		'This must be a very long message',
 		'That\'s very interesting',
 		'i see your point'
@@ -255,8 +255,12 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 				'text': 'You know what comes next... \n use toString() on a previously created varible to return a number (as a string) into the chat'
 			},
 			{
-				'title': 'While you\'re typing',
+				'title': 'While you\'re typing -- REMOVED',
 				'text': 'Randomly return a random message while user types'
+			},
+			{
+				'title': 'Get all user names',
+				'text': 'tpye "user list" to list all users and bots in js1syd'
 			}
 			
 
