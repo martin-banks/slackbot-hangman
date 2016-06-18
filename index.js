@@ -44,7 +44,7 @@ controller.hears(['pacman'], ['ambient'], function(whichBot, message) {
 
 
 
-
+// Open the doors
 controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
 	//match[1] is the (.*) group. match[0] is the entire group (open the (.*) doors).
 	var doorType = message.match[1];
@@ -65,64 +65,47 @@ controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
 			]
 		});
 	} 
-	
 	// if none of the above are true retur this
 	return bot.reply(message, response[randomNumber(response.length)] );
-
 });
 
 
 /*
 controller.on('ambient',function(bot,message) {
-
-		// do something...
-
-		// then respond with a message object
-		//
 		bot.reply(message, {
 			text: "A more complex response",
 			username: "ReplyBot",
 			icon_emoji: ":dash:",
 		});
-
 });
 */
 
 /*
 controller.hears(['hd'], ['mention'], function(bot, message){
-	
 	bot.reply(message, {
 		text: "New and improved!",
 		username: 'HD Clyde',
 		icon_emoji: ":ghost:",
 	});
-
 });
-
-
 */
 
-
+// What's the date
 controller.hears(['what is the date'], ['ambient'], function(bot, message){
-	
 	var today = new Date();
 	var dd = today.getDate();
 	var mm = today.getMonth()+1; //January is 0!
 	var yyyy = today.getFullYear();
-
 	var showDate = (dd + ' / ' + mm + ' / ' + yyyy).toString();
 	bot.reply(message, showDate);
-
 });
 
 
-
+// What's the day
 controller.hears(['what day is it'], ['ambient'], function(bot, message){
-	
 	var d = new Date();
 	var n = d.getDay();
 	var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ]
-
 	bot.reply(message, days[(n-1)]);
 
 });
@@ -145,15 +128,13 @@ controller.on('direct_message,direct_mention', function(bot,message) {
 		],
 		'icon_url': 'http://lorempixel.com/48/48'
 		}
-
 	bot.reply(message, reply_with_attachments);
 });
 
 */
 
-
+// jess bot - jQuery
 controller.hears(['jquery'], ['ambient'], function(bot, message){
-	
 	bot.reply(message, {
 		text: "jQuery is awesome!",
 		username: 'jess-bot',
@@ -161,6 +142,7 @@ controller.hears(['jquery'], ['ambient'], function(bot, message){
 	});
 });
 
+// Answer to the ultimate question
 controller.hears(['ultimate question'], ['direct_mention'], function(bot, message){
 	var meaning = 42;
 	var response = {
@@ -189,26 +171,22 @@ controller.on( 'user_typing', function(bot, message){
 			return response[randomNumber((response.length))]
 		} 
 	}
-	
 	bot.reply(message, responseNew() )
 } );
 */
 
 
-
+// list of users in js1syd
 controller.hears(['user list'], ['ambient'], function(bot, message){
-
 	bot.api.users.list({},function(err,response) {
 		if (err) {
 			bot.botkit.log('something went wrong', err);
 		}
-
 		var userList = [];
 		var l = response.members.length;
 		bot.botkit.log('number of users:', l);
 		var numberofUsers = 'number of users' + (l.toString())
 		bot.reply(message, numberofUsers );
-
 		for(var i=0; i<=l; i++){
 			if(i===l){
 				var output = userList.join('\n');
@@ -220,14 +198,80 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 				//bot.reply(message, userName );
 			}	
 		}
-
 	})
-
 });
 
 
-controller.hears('random emoji', 'ambient', function(bot, message){
+// human users
+controller.hears('human users', 'ambient', function(bot, message){
+	bot.api.users.list({},function(err,response) {
+		if (err) {
+			bot.botkit.log('something went wrong', err);
+		}
+		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
+		var output = [];
+		for (var i=0; i<response.members.length; i++){
+			if (!response.members[i].is_bot && response.members[i].name!== 'slackbot'){
+				var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+				bot.botkit.log('user:   ', humanUser );
+				output.push(humanUser)
+			}
+		}
+		bot.reply(message, output.join('\n'));
+	})
+})
 
+
+
+	bot.api.users.list({},function(err,response) {
+		if (err) {
+			bot.botkit.log('something went wrong', err);
+		}
+		bot.botkit.log('mystery user:   ', response.members[3] );
+		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
+		var output = [];
+		for (var i=0; i<response.members.length; i++){
+			if ((response.members[i].is_bot || response.members[i].name === 'slackbot') && response.members[i].deleted !== true){
+				var botUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+				bot.botkit.log('user:   ', i, botUser );
+				output.push(botUser)
+			}
+		}
+	})
+
+
+// bot users
+controller.hears('bot users', 'ambient', function(bot, message){
+	bot.api.users.list({},function(err,response) {
+		if (err) {
+			bot.botkit.log('something went wrong', err);
+		}
+		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
+		var output = [];
+		for (var i=0; i<response.members.length; i++){
+			if (response.members[i].is_bot || response.members[i].name === 'slackbot' && !response.members[i].deleted){
+				var botUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+				bot.botkit.log('user:   ', i, botUser );
+				output.push(botUser)
+			}
+		}
+		bot.reply(message, output.join('\n'));
+	})
+})
+
+// online users
+bot.api.users.getPresence({},function(err,response) {
+	if (err) {
+		bot.botkit.log('something went wrong', err);
+	}
+	bot.botkit.log('\tonline:', response);
+	
+})
+
+
+
+// random emoji
+controller.hears('random emoji', 'ambient', function(bot, message){
 	bot.api.emoji.list({}, function(err, response){
 		if (err) {
 			bot.botkit.log('something went wrong', err)
@@ -248,13 +292,12 @@ controller.hears('random emoji', 'ambient', function(bot, message){
 		}
 		bot.reply(message, output)
 	});
-
 })
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
+// list of controlls
 controller.hears(['what can you do'],['mention'], function(bot, message){
 	var botCommands = {
 		'text': 'This is what I do so far...',
@@ -288,13 +331,18 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 				'text': 'tpye "user list" to list all users and bots in js1syd'
 			},
 			{
+				'title': 'Get all human users real names',
+				'text': 'tpye "human users" to list all users in js1syd'
+			},
+			{
+				'title': 'Get all bot users real names',
+				'text': 'tpye "bot users" to list all bots in js1syd'
+			},
+			{
 				'title': 'Random emoji',
 				'text': 'Display a random emoji character'
 			}
-			
-
 		]
 	}
 	return bot.reply(message, botCommands)
-
 });
