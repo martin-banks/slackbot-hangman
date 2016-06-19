@@ -153,7 +153,8 @@ controller.hears(['ultimate question'], ['direct_mention'], function(bot, messag
 	return bot.reply(message, response )
 })
 
-/*
+
+/* // random message on user typing
 controller.on( 'user_typing', function(bot, message){
 	var response = [
 		'Yes?',
@@ -203,56 +204,23 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 
 
 // human users
-/*
 controller.hears('human users', 'ambient', function(bot, message){
 
-	var isOnline = function(param){
-		bot.api.users.getPresence({'user':param},function(err,response) {
-			if (err) {
-				bot.botkit.log('-------something went wrong---------', err);
-			}
-			//bot.botkit.log('--online--', response);
-			//return ('--online--', response);
-			//users.getPresence?user=jess
-		});
-	}
-	
-
 	bot.api.users.list({},function(err,response) {
-		if (err) {
-			bot.botkit.log('something went wrong', err);
-		}
-		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
+		if (err) {bot.botkit.log('something went wrong', err)};
+
+		//bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
 		for (var i=0; i<response.members.length; i++){
 			if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
 				var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
-				bot.botkit.log('user:   ', humanUser );
-				bot.botkit.log('user is online', isOnline(response.members[i].id))
+				//bot.botkit.log('user:   ', humanUser );
 				output.push(humanUser)
 			}
 		}
 		bot.reply(message, output.join('\n'));
 	})
 });
-*/
-
-
-
-
-/*
-
-var isOnline = function(param){
-		bot.api.users.getPresence({'user':param.id},function(err,response) {
-			if (err) {
-				bot.botkit.log('-------something went wrong---------', err);
-			}
-			return ('--online--', response);
-			//users.getPresence?user=jess
-		});
-	}
-	*/
-
 
 
 
@@ -299,7 +267,7 @@ controller.hears('bot users', 'ambient', function(bot, message){
 
 
 
-
+// ask who a bot is
 controller.hears('who is bot (.*)', 'ambient', function(bot, message){
 	var botNo = message.match[1]
 	bot.botkit.log(botNo);
@@ -313,34 +281,6 @@ controller.hears('who is bot (.*)', 'ambient', function(bot, message){
 })
 
 
-/*
-// online users
-bot.api.users.getPresence({'user':'U1ARRQ8P3'},function(err,response) {
-	if (err) {
-		bot.botkit.log('something went wrong', err);
-	}
-	bot.botkit.log('\tonline:', response.presence);
-	//users.getPresence?user=jess
-});
-*/
-
-
-/*
-//controller.on('user_typing', function(bot, message){
-	bot.api.bots.info({}, function(err, response){
-		bot.botkit.log('channel', response)
-	})
-//})
-*/
-
-/*
-bot.say(
-  {
-    text: 'my message text',
-    channel: 'C0H338YH4' // a valid slack channel, group, mpim, or im ID
-  }
-);
-*/
 
 
 
@@ -372,6 +312,75 @@ controller.hears('random emoji', 'ambient', function(bot, message){
 
 
 
+
+
+
+// repalce this with a factory function -- some day
+var userIDs = {};
+
+// make a list of all users
+function makeUserList(){
+	bot.api.users.list({}, function(err, response){
+		for(var i=0; i<response.members.length; i++){
+			userIDs[response.members[i].name] = response.members[i].id	
+		}
+		//bot.botkit.log(' user', userIDs)
+	});
+};
+makeUserList();
+
+
+
+var missingpersons = 0;
+controller.hears('user (.*)', 'ambient', function(bot, message){
+	var queryName = message.match[1] // user name
+	var onlineStatus = '--';
+	var queryId = {
+		'users': userIDs[queryName]
+	}
+	//bot.botkit.log('----asking about: ', queryName, queryId);
+	var onlineQuery = {
+		'user': userIDs[queryName]
+	}
+	bot.api.users.getPresence(onlineQuery ,function(errOnline,responseOnline) {
+		//bot.botkit.log(responseOnline.presence);
+		onlineStatus = responseOnline.presence
+	})
+
+	if ( queryId.users !== undefined){
+		missingpersons = 0;
+		bot.api.users.list({},function(err,response) {
+			if (err) {bot.botkit.log('something went wrong', err);}
+			
+			for(var i=0; i<response.members.length; i++){
+				if ( response.members[i].id === queryId.users ){
+					var userImage = {
+						'attachments': [
+							{
+								'title': 'They\'re real name is \`' + response.members[i].real_name + '\` and claim to be a \`' + response.members[i].profile.title + '\`',
+								'text': response.members[i].profile.first_name + ' is currently ' + onlineStatus,
+								'image_url': response.members[i].profile.image_512
+							}
+						]
+					}
+					bot.reply(message,userImage);
+				}
+			}	
+		});
+
+	} else {
+		if (missingpersons === 1){
+			bot.reply(message, 'Sorry, no one here by that name' );
+			missingpersons = 0;
+		} else {
+			bot.reply(message, 'Huh? I wasn\'t paying attention, can you repeat that?' );
+			makeUserList();
+			missingpersons=1;
+		}
+	}
+})
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // list of controlls
 controller.hears(['what can you do'],['mention'], function(bot, message){
@@ -379,40 +388,44 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 		'text': 'This is what I do so far...',
 		'attachments': [
 			{
-				'title': 'jess-bot',
-				'text': 'Any mention of the "jQuery" will prompt jess-bot to let you what it thinks',
+				'title': 'jQuery',
+				'text': 'Jess-bot can\'t resist telling you what he thinks about jQuery',
 			},
 			{
-				'title': 'Ask "what day is it?"',
-				'text': 'Clyde will tell you waht the day is'
+				'title': 'what day is it?',
+				'text': 'Clyde will tell you what the day is'
 			},
 			{
-				'title': 'Ask "what is the date"',
+				'title': 'what is the date',
 				'text': 'Clyde will tell you waht the date is'
 			},
 			{
-				'title': 'Ask "Open the ---- doors"',
+				'title': 'Open the ---- doors',
 				'text': 'Clyde may or may not help depending what type of door you ask him to open'
 			}, 
 			{
-				'title': '"@clydebot: what is the answer to the ultimate question"',
-				'text': 'You know what comes next... \n use toString() on a previously created varible to return a number (as a string) into the chat'
+				'title': "@clydebot: what is the answer to the ultimate question",
+				'text': 'You can guess what comes next... \n Use toString() on a previously created varible to return a number (as a string) into the chat'
 			},
 			{
 				'title': 'While you\'re typing -- REMOVED',
 				'text': 'Randomly return a random message while user types'
 			},
 			{
-				'title': 'Get all user names',
+				'title': 'user names',
 				'text': 'tpye "user list" to list all users and bots in js1syd'
 			},
 			{
-				'title': 'Get all human users real names',
+				'title': 'human users',
 				'text': 'tpye "human users" to list all users in js1syd'
 			},
 			{
-				'title': 'Get all bot users real names',
+				'title': 'bot users',
 				'text': 'tpye "bot users" to list all bots in js1syd'
+			},
+			{
+				'title': 'user ---',
+				'text': 'tpye "users" and their user/screen name for basic user information including their online status'
 			},
 			{
 				'title': 'Random emoji',
@@ -502,64 +515,3 @@ IDEA: To get list of online users:
 
 */
 
-
-var userIDs = {};
-bot.api.users.info({'user': 'U1A4LENVB'}, function(err, response){
-	//bot.botkit.log('---- real name is', response.real_name)
-})
-
-
-
-function makeUserList(){
-	bot.api.users.list({}, function(err, response){
-		for(var i=0; i<response.members.length; i++){
-			userIDs[response.members[i].name] = response.members[i].id	
-		}
-		//bot.botkit.log(' user', userIDs)
-	});
-};
-makeUserList();
-
-
-
-var missingpersons = 0;
-controller.hears('user (.*)', 'ambient', function(bot, message){
-	var queryName = message.match[1] // user name
-
-	var queryId = {
-		'users': userIDs[queryName]
-	}
-	//bot.botkit.log('----asking about: ', queryName, queryId);
-
-	if ( queryId.users !== undefined){
-		//bot.botkit.log("I don't know who that is")
-		bot.api.users.list({},function(err,response) {
-			if (err) {bot.botkit.log('something went wrong', err);}
-			//var output = 'deleted: ' + (response.members[botNo].name).toString()
-
-			for(var i=0; i<response.members.length; i++){
-				if ( response.members[i].id === queryId.users ){
-					var userImage = {
-						'attachments': [
-							{
-								//'title': 'They\'re real name is ' + response.members[i].real_name,
-								'text': 'They\'re real name is \`' + response.members[i].real_name + '\` and claim to be a \`' + response.members[i].profile.title + '\`',
-								'image_url': response.members[i].profile.image_512
-							}
-						]
-					}
-					bot.reply(message,userImage);
-				}
-			}	
-		})
-	} else {
-		if (missingpersons === 1){
-			bot.reply(message, 'Sorry, no one here by that name' );
-			missingpersons = 0;
-		} else {
-			bot.reply(message, 'Huh? I wasn\'t paying attention, can you repeat that?' );
-			makeUserList();
-			missingpersons=1;
-		}
-	}
-})
