@@ -203,7 +203,21 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 
 
 // human users
+/*
 controller.hears('human users', 'ambient', function(bot, message){
+
+	var isOnline = function(param){
+		bot.api.users.getPresence({'user':param},function(err,response) {
+			if (err) {
+				bot.botkit.log('-------something went wrong---------', err);
+			}
+			//bot.botkit.log('--online--', response);
+			//return ('--online--', response);
+			//users.getPresence?user=jess
+		});
+	}
+	
+
 	bot.api.users.list({},function(err,response) {
 		if (err) {
 			bot.botkit.log('something went wrong', err);
@@ -211,34 +225,57 @@ controller.hears('human users', 'ambient', function(bot, message){
 		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
 		for (var i=0; i<response.members.length; i++){
-			if (!response.members[i].is_bot && response.members[i].name!== 'slackbot'){
+			if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
 				var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
 				bot.botkit.log('user:   ', humanUser );
+				bot.botkit.log('user is online', isOnline(response.members[i].id))
 				output.push(humanUser)
 			}
 		}
 		bot.reply(message, output.join('\n'));
 	})
-})
+});
+*/
 
 
 
+
+/*
+
+var isOnline = function(param){
+		bot.api.users.getPresence({'user':param.id},function(err,response) {
+			if (err) {
+				bot.botkit.log('-------something went wrong---------', err);
+			}
+			return ('--online--', response);
+			//users.getPresence?user=jess
+		});
+	}
+	*/
+
+
+
+
+
+
+/*
+// testing users to the bot.log in terminal
 	bot.api.users.list({},function(err,response) {
 		if (err) {
 			bot.botkit.log('something went wrong', err);
 		}
-		bot.botkit.log('mystery user:   ', response.members[3] );
-		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
+		//bot.botkit.log('mystery user:   ', response.members[3] );
+		//bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
 		for (var i=0; i<response.members.length; i++){
 			if ((response.members[i].is_bot || response.members[i].name === 'slackbot') && response.members[i].deleted !== true){
 				var botUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
-				bot.botkit.log('user:   ', i, botUser );
+				//bot.botkit.log('user:   ', i, botUser );
 				output.push(botUser)
 			}
 		}
 	})
-
+*/
 
 // bot users
 controller.hears('bot users', 'ambient', function(bot, message){
@@ -249,24 +286,63 @@ controller.hears('bot users', 'ambient', function(bot, message){
 		bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
 		for (var i=0; i<response.members.length; i++){
-			if (response.members[i].is_bot || response.members[i].name === 'slackbot' && !response.members[i].deleted){
+			if ( (response.members[i].is_bot || response.members[i].name === 'slackbot') && response.members[i].deleted !== true){
 				var botUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
 				bot.botkit.log('user:   ', i, botUser );
-				output.push(botUser)
+				output.push( i + '\t' + botUser)
 			}
 		}
 		bot.reply(message, output.join('\n'));
 	})
 })
 
+
+
+
+
+controller.hears('who is bot (.*)', 'ambient', function(bot, message){
+	var botNo = message.match[1]
+	bot.botkit.log(botNo);
+	bot.api.users.list({},function(err,response) {
+		if (err) {
+			bot.botkit.log('something went wrong', err);
+		}
+		var output = 'deleted: ' + (response.members[botNo].name).toString()
+		bot.reply(message, output );
+	})
+})
+
+
+/*
 // online users
-bot.api.users.getPresence({},function(err,response) {
+bot.api.users.getPresence({'user':'U1ARRQ8P3'},function(err,response) {
 	if (err) {
 		bot.botkit.log('something went wrong', err);
 	}
-	bot.botkit.log('\tonline:', response);
-	
-})
+	bot.botkit.log('\tonline:', response.presence);
+	//users.getPresence?user=jess
+});
+*/
+
+
+/*
+//controller.on('user_typing', function(bot, message){
+	bot.api.bots.info({}, function(err, response){
+		bot.botkit.log('channel', response)
+	})
+//})
+*/
+
+/*
+bot.say(
+  {
+    text: 'my message text',
+    channel: 'C0H338YH4' // a valid slack channel, group, mpim, or im ID
+  }
+);
+*/
+
+
 
 
 
@@ -346,3 +422,144 @@ controller.hears(['what can you do'],['mention'], function(bot, message){
 	}
 	return bot.reply(message, botCommands)
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*  This is all wrong
+
+IDEA: To get list of online users: 
+	1. run function on user.list and push all users IDs and names into arrays
+	2. use controller.hears to then run users.presence with user ids
+	3. if returns active (?) use that index to push name and status to new array.
+	4. print results of online array
+
+
+
+
+	var userIDs = [];
+	var count= 0;
+	var output = [];
+
+	bot.api.users.list({},function(err,response) {
+		
+		var count =(response.members.length)
+		
+		//bot.botkit.log(output);
+		//console.log('count', count);
+		var onlineUsers = [];
+
+		for(var i=0; i<38; i++){
+			//console.log(userIDs[i]);
+			var g = {
+				'user': userIDs[i]
+			}
+
+			bot.api.users.getPresence(g,function(err2,response2) {
+
+				for (var j=0; j<response.members.length; j++){
+					//var userID = response.members[i].id
+
+					if (!response.members[j].is_bot && response.members[j].name !== 'slackbot'){
+						userIDs.push(response.members[j].id);
+						//bot.botkit.log(isOnline(response.members[i].id));
+						
+						var humanUser = response.members[j].profile.first_name + ' ' + response.members[j].profile.last_name ;
+						output.push(humanUser);
+						//bot.botkit.log('user:   ', humanUser );
+					};
+					
+				}
+
+
+				bot.botkit.log('online???',i-1, output[i-1], response2.presence)
+				onlineUsers.push(response2.presence)
+				//bot.botkit.log('--online----', response2.presence);	
+			});
+
+		}
+		bot.botkit.log('xxxxx', onlineUsers)
+	})
+
+
+*/
+
+
+var userIDs = {};
+bot.api.users.info({'user': 'U1A4LENVB'}, function(err, response){
+	//bot.botkit.log('---- real name is', response.real_name)
+})
+
+
+
+function makeUserList(){
+	bot.api.users.list({}, function(err, response){
+		for(var i=0; i<response.members.length; i++){
+			userIDs[response.members[i].name] = response.members[i].id	
+		}
+		//bot.botkit.log(' user', userIDs)
+	});
+};
+makeUserList();
+
+
+
+var missingpersons = 0;
+controller.hears('user (.*)', 'ambient', function(bot, message){
+	var queryName = message.match[1] // user name
+
+	var queryId = {
+		'users': userIDs[queryName]
+	}
+	//bot.botkit.log('----asking about: ', queryName, queryId);
+
+	if ( queryId.users !== undefined){
+		//bot.botkit.log("I don't know who that is")
+		bot.api.users.list({},function(err,response) {
+			if (err) {bot.botkit.log('something went wrong', err);}
+			//var output = 'deleted: ' + (response.members[botNo].name).toString()
+
+			for(var i=0; i<response.members.length; i++){
+				if ( response.members[i].id === queryId.users ){
+					var userImage = {
+						'attachments': [
+							{
+								//'title': 'They\'re real name is ' + response.members[i].real_name,
+								'text': 'They\'re real name is \`' + response.members[i].real_name + '\` and claim to be a \`' + response.members[i].profile.title + '\`',
+								'image_url': response.members[i].profile.image_512
+							}
+						]
+					}
+					bot.reply(message,userImage);
+				}
+			}	
+		})
+	} else {
+		if (missingpersons === 1){
+			bot.reply(message, 'Sorry, no one here by that name' );
+			missingpersons = 0;
+		} else {
+			bot.reply(message, 'Huh? I wasn\'t paying attention, can you repeat that?' );
+			makeUserList();
+			missingpersons=1;
+		}
+	}
+})
