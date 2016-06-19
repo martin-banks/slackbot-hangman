@@ -69,7 +69,7 @@ controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
 	return bot.reply(message, response[randomNumber(response.length)] );
 });
 
-
+// early tests
 /*
 controller.on('ambient',function(bot,message) {
 		bot.reply(message, {
@@ -111,8 +111,7 @@ controller.hears(['what day is it'], ['ambient'], function(bot, message){
 });
 
 
-/*
-
+/* // complex replies with different fields all stored in an abject with array of attachments
 controller.on('direct_message,direct_mention', function(bot,message) {
 	var reply_with_attachments = {
 		'username': 'My bot' ,
@@ -130,7 +129,6 @@ controller.on('direct_message,direct_mention', function(bot,message) {
 		}
 	bot.reply(message, reply_with_attachments);
 });
-
 */
 
 // jess bot - jQuery
@@ -332,7 +330,7 @@ makeUserList();
 
 
 var missingpersons = 0;
-controller.hears('user (.*)', 'ambient', function(bot, message){
+controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, message){
 	var queryName = message.match[1] // user name
 	var onlineStatus = '--';
 	var queryId = {
@@ -357,7 +355,7 @@ controller.hears('user (.*)', 'ambient', function(bot, message){
 					var userImage = {
 						'attachments': [
 							{
-								'title': 'They\'re real name is \`' + response.members[i].real_name + '\` and claim to be a \`' + response.members[i].profile.title + '\`',
+								'title': 'They\'re real name is \`' + response.members[i].real_name + '\` \n\`' + response.members[i].profile.title + '\`',
 								'text': response.members[i].profile.first_name + ' is currently ' + onlineStatus,
 								'image_url': response.members[i].profile.image_512
 							}
@@ -515,3 +513,95 @@ IDEA: To get list of online users:
 
 */
 
+
+
+
+
+
+
+
+
+bot.botkit.log('bot started')
+
+// conversation test
+controller.hears('pizzatime', 'direct_message', function(bot,message) {
+	bot.botkit.log('pizza started');
+
+    askFlavor = function(response, convo) {
+      convo.ask('What flavor of pizza do you want?', function(response, convo) {
+      	//var k = JSON.stringify(convo);
+      	//bot.botkit.log(k);
+
+      	if(controller.hears('pineapple') ){ 
+      		convo.say('That\'s nasty.');
+	        convo.next();
+      	} else {
+      		convo.say('Awesome.');
+	        askSize(response, convo);
+	        convo.next();
+      	}   
+
+      });
+    }
+    askSize = function(response, convo) {
+      convo.ask('What size do you want?', function(response, convo) {
+        convo.say('Ok.')
+        askWhereDeliver(response, convo);
+        convo.next();
+      });
+    }
+    askWhereDeliver = function(response, convo) {
+      convo.ask('So where do you want it delivered?', function(response, convo) {
+        convo.say('Ok! Good bye.');
+        convo.next();
+      });
+    }
+
+    bot.startConversation(message, askFlavor);
+});
+
+
+// prefix and csv for keywords to match against
+// if 'keyword' and one of the csv are matched perfirm function
+// else do nothing
+controller.hears(['keyword','^fish$, ^dragon$'],['direct_message'],function(bot,message) {
+  // do something to respond to message
+  bot.reply(message,'You used a keyword!');
+
+});
+
+
+var keyPhrases = [
+	'Stark', 'Lanister', 'Greyjoy', 'Bolton'
+]
+controller.hears([keyPhrases],['direct_message'],function(bot,message) {
+	//bot.botkit.log(message);
+  // do something to respond to message
+  bot.reply(message,'You used a keyword!');
+});
+
+
+
+
+//controller.hears('channel info', 'direct_message', function(bot, message){
+	bot.api.channels.list({},function(err, response){
+		var channelKeys = Object.keys(response);
+		//bot.botkit.log('---- channel keys: ', channelKeys.join('\n'))
+		//bot.botkit.log('---- channel info', response);
+	})
+//})
+
+
+bot.api.channels.info({'channel': 'C0ZSX0Z9N'},function(err, response){
+		//var channelKeys = JSON.stringify(response);
+		//bot.botkit.log('---- channel keys: ', channelKeys)
+		//bot.botkit.log('---- channel info', response);
+	})
+
+
+
+bot.api.channels.history({'channel': 'C0ZSX0Z9N', 'count': 1},function(err, response){
+		//var channelKeys = JSON.stringify(response);
+		//bot.botkit.log('---- channel keys: ', channelKeys)
+		bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
+	})
