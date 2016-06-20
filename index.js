@@ -635,6 +635,66 @@ bot.api.im.history({'channel': 'D1J7GEA6A', 'count': 1},function(err, response){
 controller.hears('we need to talk', 'mention', function(bot, message){
 	bot.api.im.open({'user': 'U16MQAW1L'}, function(err, response){
 		bot.botkit.log('---- chat open');
-		chat.post({'channel': 'U16MQAW1L', 'text': 'Hello', 'as_user': 'U1HDDKWCD'})
+		bot.api.chat.postMessage({'channel': 'U16MQAW1L', 'text': 'Hello', 'as_user': 'U1HDDKWCD'})
 	})
+});
+
+
+// exploring the information inside asent message
+controller.hears('say my name', 'direct_message', function(bot, message){
+	var messageKeys = Object.keys(message);
+	bot.botkit.log('---- message keys:', messageKeys );
+
+	messageKeys.forEach(function(key, i){
+		bot.botkit.log('---- key', i, key, message[key])
+	})
+	bot.botkit.log('---- user ', message.user);
+	bot.reply(message, 'Your id is: ' + message.user.name)
 })
+
+
+
+
+
+controller.hears(['hello', 'hi'], 'direct_message', function(bot, message) {
+
+    bot.api.reactions.add({
+        timestamp: message.ts,
+        channel: message.channel,
+        name: 'robot_face',
+    }, function(err, res) {
+        if (err) {
+            bot.botkit.log('Failed to add emoji reaction :(', err);
+        }
+    });
+
+
+    controller.storage.users.get(message.user, function(err, user) {
+        if (user && user.name) {
+            bot.reply(message, 'Hello ' + user.name + '!!');
+        } else {
+            bot.reply(message, 'Hello.');
+        }
+    });
+});
+
+
+
+
+
+
+// changing user name only while bot is running
+controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message', function(bot, message) {
+    var name = message.match[1];
+    controller.storage.users.get(message.user, function(err, user) {
+        if (!user) {
+            user = {
+                id: message.user,
+            };
+        }
+        user.name = name;
+        controller.storage.users.save(user, function(err, id) {
+            bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
+        });
+    });
+});
