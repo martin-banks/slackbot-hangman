@@ -254,7 +254,7 @@ controller.hears('bot users', 'ambient', function(bot, message){
 		for (var i=0; i<response.members.length; i++){
 			if ( (response.members[i].is_bot || response.members[i].name === 'slackbot') && response.members[i].deleted !== true){
 				var botUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
-				bot.botkit.log('user:   ', i, botUser );
+				bot.botkit.log('user:   ', i, response.members[i].id );
 				output.push( i + '\t' + botUser)
 			}
 		}
@@ -532,11 +532,11 @@ controller.hears('pizzatime', 'direct_message', function(bot,message) {
       	//var k = JSON.stringify(convo);
       	//bot.botkit.log(k);
 
-      	if(controller.hears('pineapple') ){ 
-      		convo.say('That\'s nasty.');
+      	if(response.text === 'pineapple' ){ 
+      		convo.say('No way, that\'s nasty.');
 	        convo.next();
       	} else {
-      		convo.say('Awesome.');
+      		convo.say('Nice.');
 	        askSize(response, convo);
 	        convo.next();
       	}   
@@ -544,15 +544,33 @@ controller.hears('pizzatime', 'direct_message', function(bot,message) {
       });
     }
     askSize = function(response, convo) {
-      convo.ask('What size do you want?', function(response, convo) {
-        convo.say('Ok.')
-        askWhereDeliver(response, convo);
-        convo.next();
+      convo.ask('Do you want a small, medium or large', function(response, convo) {
+		if(response.text === 'small'){
+			convo.say(response.text + ' it is');
+			askWhereDeliver(response, convo);
+			convo.next();
+		} else if (response.text === 'medium'){
+			convo.say( response.text + ' good call');
+			askWhereDeliver(response, convo);
+			convo.next();
+		} else if (response.text === 'large'){
+			convo.say('bit of an appetite have we?');
+			askWhereDeliver(response, convo);
+			convo.next();
+		} else {
+			convo.say('Can you repeat that?');
+			askSize(response, convo);
+			convo.next();
+		}
+
+        //convo.say('Ok.')
+       // askWhereDeliver(response, convo);
+       // convo.next();
       });
     }
     askWhereDeliver = function(response, convo) {
       convo.ask('So where do you want it delivered?', function(response, convo) {
-        convo.say('Ok! Good bye.');
+        convo.say('Done, pizza on it\'s way to ' + response.text);
         convo.next();
       });
     }
@@ -599,9 +617,24 @@ bot.api.channels.info({'channel': 'C0ZSX0Z9N'},function(err, response){
 	})
 
 
-
+// use count to control the number of history entries to wrok through
 bot.api.channels.history({'channel': 'C0ZSX0Z9N', 'count': 1},function(err, response){
 		//var channelKeys = JSON.stringify(response);
 		//bot.botkit.log('---- channel keys: ', channelKeys)
 		bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
 	})
+
+
+bot.api.im.history({'channel': 'D1J7GEA6A', 'count': 1},function(err, response){
+		//var channelKeys = JSON.stringify(response);
+		//bot.botkit.log('---- channel keys: ', channelKeys)
+		bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
+	});
+
+
+controller.hears('we need to talk', 'mention', function(bot, message){
+	bot.api.im.open({'user': 'U16MQAW1L'}, function(err, response){
+		bot.botkit.log('---- chat open');
+		chat.post({'channel': 'U16MQAW1L', 'text': 'Hello', 'as_user': 'U1HDDKWCD'})
+	})
+})
