@@ -29,6 +29,8 @@ bot.startRTM(function(error, whichBot, payload) {
 
 
 
+
+
 var randomNumber = function(param){
 	return (Math.floor(Math.random()*param))
 }
@@ -527,24 +529,24 @@ bot.botkit.log('bot started')
 controller.hears('pizzatime', 'direct_message', function(bot,message) {
 	bot.botkit.log('pizza started');
 
-    askFlavor = function(response, convo) {
-      convo.ask('What flavor of pizza do you want?', function(response, convo) {
-      	//var k = JSON.stringify(convo);
-      	//bot.botkit.log(k);
+	askFlavor = function(response, convo) {
+	  convo.ask('What flavor of pizza do you want?', function(response, convo) {
+		//var k = JSON.stringify(convo);
+		//bot.botkit.log(k);
 
-      	if(response.text === 'pineapple' ){ 
-      		convo.say('No way, that\'s nasty.');
-	        convo.next();
-      	} else {
-      		convo.say('Nice.');
-	        askSize(response, convo);
-	        convo.next();
-      	}   
+		if(response.text === 'pineapple' ){ 
+			convo.say('No way, that\'s nasty.');
+			convo.next();
+		} else {
+			convo.say('Nice.');
+			askSize(response, convo);
+			convo.next();
+		}   
 
-      });
-    }
-    askSize = function(response, convo) {
-      convo.ask('Do you want a small, medium or large', function(response, convo) {
+	  });
+	}
+	askSize = function(response, convo) {
+	  convo.ask('Do you want a small, medium or large', function(response, convo) {
 		if(response.text === 'small'){
 			convo.say(response.text + ' it is');
 			askWhereDeliver(response, convo);
@@ -563,19 +565,19 @@ controller.hears('pizzatime', 'direct_message', function(bot,message) {
 			convo.next();
 		}
 
-        //convo.say('Ok.')
-       // askWhereDeliver(response, convo);
-       // convo.next();
-      });
-    }
-    askWhereDeliver = function(response, convo) {
-      convo.ask('So where do you want it delivered?', function(response, convo) {
-        convo.say('Done, pizza on it\'s way to ' + response.text);
-        convo.next();
-      });
-    }
+		//convo.say('Ok.')
+	   // askWhereDeliver(response, convo);
+	   // convo.next();
+	  });
+	}
+	askWhereDeliver = function(response, convo) {
+	  convo.ask('So where do you want it delivered?', function(response, convo) {
+		convo.say('Done, pizza on it\'s way to ' + response.text);
+		convo.next();
+	  });
+	}
 
-    bot.startConversation(message, askFlavor);
+	bot.startConversation(message, askFlavor);
 });
 
 
@@ -621,15 +623,15 @@ bot.api.channels.info({'channel': 'C0ZSX0Z9N'},function(err, response){
 bot.api.channels.history({'channel': 'C0ZSX0Z9N', 'count': 1},function(err, response){
 		//var channelKeys = JSON.stringify(response);
 		//bot.botkit.log('---- channel keys: ', channelKeys)
-		bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
-	})
+//	bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
+})
 
 
 bot.api.im.history({'channel': 'D1J7GEA6A', 'count': 1},function(err, response){
 		//var channelKeys = JSON.stringify(response);
 		//bot.botkit.log('---- channel keys: ', channelKeys)
-		bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
-	});
+//	bot.botkit.log('---- channel info' + response.messages[0].text +' posted by user: ' + response.messages[0].user)
+});
 
 
 controller.hears('we need to talk', 'mention', function(bot, message){
@@ -658,24 +660,24 @@ controller.hears('say my name', 'direct_message', function(bot, message){
 
 controller.hears(['hello', 'hi'], 'direct_message', function(bot, message) {
 
-    bot.api.reactions.add({
-        timestamp: message.ts,
-        channel: message.channel,
-        name: 'robot_face',
-    }, function(err, res) {
-        if (err) {
-            bot.botkit.log('Failed to add emoji reaction :(', err);
-        }
-    });
+	bot.api.reactions.add({
+		timestamp: message.ts,
+		channel: message.channel,
+		name: 'robot_face',
+	}, function(err, res) {
+		if (err) {
+			bot.botkit.log('Failed to add emoji reaction :(', err);
+		}
+	});
 
 
-    controller.storage.users.get(message.user, function(err, user) {
-        if (user && user.name) {
-            bot.reply(message, 'Hello ' + user.name + '!!');
-        } else {
-            bot.reply(message, 'Hello.');
-        }
-    });
+	controller.storage.users.get(message.user, function(err, user) {
+		if (user && user.name) {
+			bot.reply(message, 'Hello ' + user.name + '!!');
+		} else {
+			bot.reply(message, 'Hello. :squirrel:');
+		}
+	});
 });
 
 
@@ -685,16 +687,162 @@ controller.hears(['hello', 'hi'], 'direct_message', function(bot, message) {
 
 // changing user name only while bot is running
 controller.hears(['call me (.*)', 'my name is (.*)'], 'direct_message', function(bot, message) {
-    var name = message.match[1];
-    controller.storage.users.get(message.user, function(err, user) {
-        if (!user) {
-            user = {
-                id: message.user,
-            };
-        }
-        user.name = name;
-        controller.storage.users.save(user, function(err, id) {
-            bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
-        });
-    });
+	var name = message.match[1];
+	controller.storage.users.get(message.user, function(err, user) {
+		if (!user) {
+			user = {
+				id: message.user,
+			};
+		}
+		user.name = name;
+		controller.storage.users.save(user, function(err, id) {
+			bot.reply(message, 'Got it. I will call you ' + user.name + ' from now on.');
+		});
+	});
 });
+
+
+//create new channel
+controller.hears('create channel called', 'direct_message', function(bot, message){
+	bot.api.channels.create({'name': 'newTest'}, function(err, response){
+		bot.botkit.log(err)
+	});
+	bot.botkit.log('done')
+})
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// HANGMAN BOT ///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+var botLog = (param)=>{
+	console.log("\x1b[33m", param, "\x1b[0m")
+}
+
+var words = [
+	'tree',
+	'beach',
+	'sea',
+	'factory'
+];
+var r = function(min, max){
+	return min + (Math.floor(Math.random()*max))
+};
+var puzzleWord = [];
+var puzzleView = [];
+var wrongGuessCount= 5;
+var guessLetter;
+var answer = (puzzleView.toString().replace(/,/g, ''));
+var gameInPlay = false;
+
+controller.hears('play hangman', 'direct_message', (bot, message)=>{
+	var mKeys = Object.keys(message);
+	bot.botkit.log(mKeys);
+	var playerName;
+
+
+
+	bot.api.users.info({'user': message.user}, (err, response)=>{
+		botLog(response.user.name);
+		playerName = response.user.name;
+
+		
+		if (response.user.name === 'martin' && !gameInPlay) {
+			// if user allowed to play
+			gameInPlay = true;
+			botLog('game on');
+
+			// quiz setup
+			var chooseWord = words[r(0, words.length)]
+			botLog(chooseWord);
+			for (var i=0; i<chooseWord.length; i++){
+				puzzleWord.push(chooseWord[i]);
+			}
+			botLog(puzzleWord);
+			for(var i=0; i<puzzleWord.length; i++){
+				puzzleView.push('--');
+			};
+			botLog(puzzleView);
+			bot.startConversation(message, askLetter);
+		} else {
+			console.lg('game off');
+			gameInPlay = false;
+		}
+	})
+	
+
+
+
+	askLetter = function(response, convo) {
+		convo.ask('*' + puzzleView.join('  ') + '*\n' + 'Pick a letter' , function(response, convo) {
+
+			guessLetter = response.text[0];
+			var status = false;
+			//console.log("\x1b[33m", 'playing:', guessLetter, "\x1b[0m")
+
+			for(let i = 0; i<(puzzleWord.length); i++){
+				if(guessLetter === puzzleWord[i] ){ 
+					status = true;
+					puzzleView[i] = guessLetter; 
+					console.log(puzzleView)
+					answer = (puzzleView.toString().replace(/,/g, ''));
+		
+					//convo.say('');
+					//convo.next();
+				} 
+			}
+			console.log(answer, status)
+			   
+			if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+				console.log( 'winner!');
+				convo.say(answer + '\nWinner!')
+				//document.querySelector('body').innerHTML = `<h3>${answer}</h3><h1>Winner!!</h1>`;
+				//askSize(response, convo);
+				challenge(response, convo);
+				convo.next();
+			} 
+			else if ( status ) {
+				console.log( 'correct!, next guess!');
+				convo.say('correct!, guess again');
+				askLetter(response, convo);
+				convo.next();
+			} 
+			else if (wrongGuessCount <= 1){
+				console.log('you lose, game over');
+				convo.say('you lose, game over')
+				//document.querySelector('body').innerHTML = '<h1>Game over</h1>'
+				convo.next();
+			}
+			else {
+				console.log('wrong guess');
+				wrongGuessCount-=1;
+				convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left')
+				//document.getElementById('guessLeft').textContent = wrongGuessCount + ' guesses left';
+				//document.querySelector('#wrong').textContent = "Wrong guess";
+				askLetter(response, convo);
+				convo.next();
+			} 
+
+		});
+	}
+	challenge = function(response, convo) {
+		convo.say('challenge --- \n get list online users here');
+		convo.next();
+	}
+
+
+
+
+
+
+
+
+
+
+	
+	
+})
