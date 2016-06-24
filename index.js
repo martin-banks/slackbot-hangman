@@ -203,26 +203,56 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 });
 
 
-// human users
-controller.hears('human users', 'ambient', function(bot, message){
+var p = {
+		test: 'blah'
+	};
+function getHumanUsersPresence(id, results){
+	bot.api.users.getPresence({'user': id}, function(err, response){
+		if (response.presence == 'active'){
+			p[id] = response.presence
+		}
+		//bot.botkit.log('presence: ', results)
+	})
+}
 
+// human users
+controller.hears('get human users', 'direct_message', function(bot, message){
+	
+	
 	bot.api.users.list({},function(err,response) {
 		if (err) {bot.botkit.log('something went wrong', err)};
 
 		//bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
+		
 		for (var i=0; i<response.members.length; i++){
+			
 			if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
 				var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
 				//bot.botkit.log('user:   ', humanUser );
+				//bot.botkit.log( response.members[i].id );
+				var testId = response.members[i].id
+				/*bot.api.users.getPresence({'user': testId}, function(err, response){
+					bot.botkit.log('presence is: ', response.presence)
+				})*/
+				getHumanUsersPresence(testId, p)
+
+
+				//bot.botkit.log( user.list.user[response.members[i].id] )
 				output.push(humanUser)
 			}
 		}
-		bot.reply(message, output.join('\n'));
-	})
+		
+		//bot.botkit.log(k);	
+		//bot.reply(message, output.join('\n'));
+	});
+
 });
 
-
+controller.hears('show online users', 'direct_message', function(bot, message){
+	let k = Object.keys(p);
+	bot.botkit.log(k);	
+})
 
 
 
@@ -383,7 +413,7 @@ controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, messa
 
 ////////////////////////////////////////////////////////////////////////////////
 // list of controlls
-controller.hears(['what can you do'],['mention'], function(bot, message){
+controller.hears(['what can you do'],['mention', 'direct_message'], function(bot, message){
 	var botCommands = {
 		'text': 'This is what I do so far...',
 		'attachments': [
@@ -744,7 +774,10 @@ var words = [
 words = words.map( (v,i,a) => {
 	return v.toUpperCase();
 });
-botLog(words);
+//botLog(words);
+
+
+
 
 // start hangman game
 controller.hears('play hangman', 'direct_message', (bot, message)=>{
@@ -792,6 +825,71 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		clearInterval(gameTimer);
 		botLog('time: ' + (t/10) + ' seconds')
 	}
+
+
+
+	// get oline users
+	var onlineUserList = ['test'];
+	
+	/*function getHumanUsersPresence(id){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList[id] = response.presence
+			}
+		})
+	};*/
+
+	function getHumanUsersPresence(id){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList.push(id)
+			}
+		})
+	};
+
+	function pushUserNames(id, userName){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList.push(userName);
+				botLog('id: ' + userName)
+			}
+			
+		})
+	}
+	
+	// get human users	
+	function getHumanUsers(){
+		bot.api.users.list({},function(err,response) {
+			if (err) {bot.botkit.log('something went wrong', err)};
+			var output = [];
+			var l = response.members.length
+			for (var i=0; i<l; i++){
+				
+				if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
+					//var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+					var id = response.members[i].id;
+					var userName = response.members[i].name;
+					pushUserNames(id, userName)
+				}
+				/*if ( i === (response.members.length)-1 ){
+					setTimeout(function(){
+						let k = Object.keys(onlineUserList);
+						bot.botkit.log(onlineUserList);	
+						return onlineUserList
+					},500)
+				}*/
+			} // end for loop
+		}); // end api call
+	} // end function	
+
+
+	
+
+
+
+
+
+
 
 
 	bot.api.users.info({'user': message.user}, (err, response)=>{
@@ -898,9 +996,12 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			else if (response.text === 'play hangman'){
 				convo.say('you\'re already playing!')
 			}
+			// guess whole word
 			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
+				botLog(response.text)
 				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
 				stopGameTimer();
+				getHumanUsers()
 				let reply = {
 					//'text': 'correct!, you have these letters left',
 					'attachments': [
@@ -912,6 +1013,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				                    "title": "You got it in" ,
 				                    "value": (t/10) + ' seconds',
 				                    "short": true
+				                },
+				                 {
+				                    "title": "Challenge mode" ,
+				                    "value": 'Do you want to see who is online now?',
+				                    "short": true
 				                }
 				            ],
 							'color': 'good',
@@ -919,13 +1025,15 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 							"mrkdwn_in": ["text", 'title', "pretext"]
 						}
 					]
-				}
+				};
 				convo.say(reply);
-				challenge(response, convo);
+				asktoChallenge(response, convo);
 				convo.next();
 			}
 			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+				botLog('got right letters');
 				stopGameTimer();
+
 				botLog( 'winner!');
 				let reply = {
 					//'text': 'correct!, you have these letters left',
@@ -1035,11 +1143,32 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 		});
 	}
+	// challenge someone else
 	challenge = function(response, convo) {
-		convo.say('challenge --- \n get list online users here');
-		convo.next();
-		gameInPlay = false;
+		//getHumanUsers();
+		botLog('online users from challenge: ' + onlineUserList);
+		
+		convo.say(onlineUserList);
+		convo.next();	
+		gameInPlay = false;	
+	};
+
+	asktoChallenge = function(response, convo) {
+		convo.ask('want to challenge?' , function(response, convo) {
+			if(response.text === 'yes'){
+				botLog('online users from challenge: ' + onlineUserList.join(', '));
+				convo.say('Looking for online users... ' + onlineUserList.join(', ') )
+				challenge(response, convo);
+				convo.next();
+			} 
+			else {
+				convo.say('thanks for playing');
+				convo.next();
+			}
+		})
+		
 	}
+
 	quitGame = (response, convo)=>{
 		let reply = {
 			//'text': 'correct!, you have these letters left',
@@ -1079,8 +1208,9 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 - create your own quiz to challenge others / temp storage / factory function
 - start game in private chat 
 - move into bot-test-clyde channel
-
+- attachment reponse as template function
 - all info into single game object 
+- conditional for timer to show minutes and seconds
 
 
 ## in prgress
