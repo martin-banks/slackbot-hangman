@@ -736,24 +736,28 @@ botLog(words);
 var r = function(min, max){
 	return min + (Math.floor(Math.random()*max))
 };
-var puzzleWord = [];
-var puzzleView = [];
-var wrongGuessCount= 5;
-var guessLetter;
-var answer = (puzzleView.toString().replace(/,/g, ''));
-var gameInPlay = false;
-var userGuesses = [];
-var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 
-alphabet = alphabet.map((v,i,a)=>{
-	return '*' + v + '*'
-});
-botLog(alphabet)
 
+
+// start hangman game
 controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
 	var playerName;
+
+	var puzzleWord = [];
+	var puzzleView = [];
+	var wrongGuessCount= 5;
+	var guessLetter;
+	var answer = (puzzleView.toString().replace(/,/g, ''));
+	var gameInPlay = false;
+	var userGuesses = [];
+	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+	alphabet = alphabet.map((v,i,a)=>{
+		return '*' + v + '*'
+	});
+	botLog(alphabet)
 
 
 
@@ -762,7 +766,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		playerName = response.user.name;
 
 		
-		if (response.user.name === 'martin' && !gameInPlay) {
+		if (playerName === 'martin' && !gameInPlay) {
 			// if user allowed to play
 			gameInPlay = true;
 			botLog('game on');
@@ -782,7 +786,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			botLog(puzzleView);
 			bot.startConversation(message, askLetter);
 		} else {
-			console.lg('game off');
+			botLog('game off');
 			gameInPlay = false;
 		}
 	})
@@ -803,7 +807,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			if(filterGuesses.length === 0){
 				for ( var i=0; i<alphabet.length; i++ ){
 					if ( '*'+ guessLetter + '*' === alphabet[i]) {
-						alphabet[i] = '~' + guessLetter + '~';
+						alphabet[i] = ' ';
 						userGuesses.push(guessLetter);
 					} 
 				}
@@ -811,13 +815,13 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 
 			var status = false;
-			//console.log("\x1b[33m", 'playing:', guessLetter, "\x1b[0m")
+			//botLog("\x1b[33m", 'playing:', guessLetter, "\x1b[0m")
 
 			for(let i = 0; i<(puzzleWord.length); i++){
 				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0){ 
 					status = true;
 					puzzleView[i] = guessLetter; 
-					console.log(puzzleView)
+					botLog(puzzleView)
 					answer = (puzzleView.toString().replace(/,/g, ''));
 					
 					// nextConvoName(response, convo)
@@ -827,10 +831,17 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 				} 
 			}
-			console.log(answer, status)
-			   
-			if (answer === puzzleWord.toString().replace(/,/g, '') ) {
-				console.log( 'winner!');
+			botLog(answer, status)
+
+			if(response.text === 'quit'){
+				convo.say('quitting...')
+				quitGame(response, convo);
+				convo.next;
+			} else if (response.text === 'play hangman'){
+				convo.say('you\'re already playing!')
+			}
+			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+				botLog( 'winner!');
 				convo.say(answer + '\nWinner!')
 				//document.querySelector('body').innerHTML = `<h3>${answer}</h3><h1>Winner!!</h1>`;
 				//askSize(response, convo);
@@ -838,14 +849,14 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.next();
 			} 
 			else if ( status ) {
-				console.log( 'correct!, next guess!');
+				botLog( 'correct!, next guess!');
 				convo.say('correct!, guess again');
 				convo.say(alphabet.join('  '));
 				askLetter(response, convo);
 				convo.next();
 			} 
 			else if (wrongGuessCount <= 1){
-				console.log('you lose, game over');
+				botLog('you lose, game over');
 				convo.say('you lose, game over')
 				//document.querySelector('body').innerHTML = '<h1>Game over</h1>'
 				convo.next();
@@ -856,7 +867,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.next();
 			}
 			else {
-				console.log('wrong guess');
+				botLog('wrong guess');
 				wrongGuessCount-=1;
 				convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left')
 				//document.getElementById('guessLeft').textContent = wrongGuessCount + ' guesses left';
@@ -870,6 +881,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	challenge = function(response, convo) {
 		convo.say('challenge --- \n get list online users here');
 		convo.next();
+	}
+	quitGame = (response, convo)=>{
+		gameInPlay = false;
+		convo.say('game has quit');
+		convo.next()
 	}
 
 
