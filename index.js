@@ -753,10 +753,12 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var gameInPlay = false;
 	var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-
+	
+	/*
 	alphabet = alphabet.map((v,i,a)=>{
 		return '*' + v + '*'
 	});
+	*/
 	botLog(alphabet)
 
 
@@ -786,7 +788,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			botLog(puzzleView);
 			bot.startConversation(message, askLetter);
 		} else {
-			botLog('game off');
+			botLog('Access denied.\nGame not started');
 			gameInPlay = false;
 		}
 	})
@@ -806,16 +808,15 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			if(filterGuesses.length === 0){
 				for ( var i=0; i<alphabet.length; i++ ){
-					if ( '*'+ guessLetter + '*' === alphabet[i]) {
+					if ( guessLetter === alphabet[i]) {
 						alphabet[i] = ' ';
 						userGuesses.push(guessLetter);
 					} 
 				}
 			}
 
-
 			var status = false;
-			//botLog("\x1b[33m", 'playing:', guessLetter, "\x1b[0m")
+			botLog(('playing: ' + guessLetter))
 
 			for(let i = 0; i<(puzzleWord.length); i++){
 				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0){ 
@@ -823,12 +824,9 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					puzzleView[i] = guessLetter; 
 					botLog(puzzleView)
 					answer = (puzzleView.toString().replace(/,/g, ''));
-					
 					// nextConvoName(response, convo)
 					// convo.say('');
 					// convo.next();
-
-
 				} 
 			}
 			botLog(answer, status)
@@ -842,36 +840,33 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			}
 			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
 				botLog( 'winner!');
-				convo.say(answer + '\nWinner!')
-				//document.querySelector('body').innerHTML = `<h3>${answer}</h3><h1>Winner!!</h1>`;
-				//askSize(response, convo);
+				convo.say(answer + '\nWinner!');
 				challenge(response, convo);
 				convo.next();
 			} 
-			else if ( status ) {
-				botLog( 'correct!, next guess!');
-				convo.say('correct!, guess again');
-				convo.say(alphabet.join('  '));
+			else if ( status && filterGuesses.length ===0) {
+				botLog( 'correct!, guess again');
+				convo.say('correct!, you have these letters left');
+				convo.say('```' + alphabet.join('  ') + '```');
 				askLetter(response, convo);
 				convo.next();
 			} 
 			else if (wrongGuessCount <= 1){
 				botLog('you lose, game over');
 				convo.say('you lose, game over')
-				//document.querySelector('body').innerHTML = '<h1>Game over</h1>'
 				convo.next();
 			}
 			else if ( filterGuesses.length > 0 ) {
 				convo.say('oops, already played that one, try again' );
+				convo.say('```' + alphabet.join('  ') + '```');
 				askLetter(response, convo);
 				convo.next();
 			}
 			else {
 				botLog('wrong guess');
 				wrongGuessCount-=1;
-				convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left')
-				//document.getElementById('guessLeft').textContent = wrongGuessCount + ' guesses left';
-				//document.querySelector('#wrong').textContent = "Wrong guess";
+				convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
+				convo.say('```' + alphabet.join('  ') + '```');
 				askLetter(response, convo);
 				convo.next();
 			} 
