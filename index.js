@@ -722,6 +722,10 @@ controller.hears('create channel called', 'direct_message', function(bot, messag
 var botLog = (param)=>{
 	console.log("\x1b[33m", param, "\x1b[0m")
 }
+var r = function(min, max){
+	return min + (Math.floor(Math.random()*max))
+};
+
 
 var words = [
 	'tree',
@@ -733,14 +737,17 @@ words = words.map( (v,i,a) => {
 	return v.toUpperCase();
 });
 botLog(words);
-var r = function(min, max){
-	return min + (Math.floor(Math.random()*max))
-};
 
 
 
 // start hangman game
 controller.hears('play hangman', 'direct_message', (bot, message)=>{
+	//function startTimer(c){
+		
+	//}
+	
+
+
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
 	var playerName;
@@ -759,7 +766,20 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		return '*' + v + '*'
 	});
 	*/
-	botLog(alphabet)
+	botLog(alphabet);
+
+	var t=0;
+	var gameTimer;
+	function startGameTimer(){
+		gameTimer = setInterval(gameTimerAction, 100);
+	}
+	function gameTimerAction(){
+		t+=1
+	};
+	function stopGameTimer(){
+		clearInterval(gameTimer);
+		botLog('time: ' + (t/10) + ' seconds')
+	}
 
 
 
@@ -771,6 +791,8 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		if (playerName === 'martin' && !gameInPlay) {
 			// if user allowed to play
 			gameInPlay = true;
+			startGameTimer();
+
 			botLog('game on');
 
 			// quiz setup
@@ -832,6 +854,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			botLog(answer, status)
 
 			if(response.text === 'quit'){
+				stopGameTimer();
 				convo.say('quitting...')
 				quitGame(response, convo);
 				convo.next;
@@ -839,6 +862,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.say('you\'re already playing!')
 			}
 			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+				stopGameTimer();
 				botLog( 'winner!');
 				convo.say(answer + '\nWinner!');
 				challenge(response, convo);
@@ -852,6 +876,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.next();
 			} 
 			else if (wrongGuessCount <= 1){
+				stopGameTimer();
 				botLog('you lose, game over');
 				convo.say('you lose, game over')
 				convo.next();
@@ -876,11 +901,12 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	challenge = function(response, convo) {
 		convo.say('challenge --- \n get list online users here');
 		convo.next();
+		gameInPlay = false;
 	}
 	quitGame = (response, convo)=>{
-		gameInPlay = false;
 		convo.say('game has quit');
-		convo.next()
+		convo.next();
+		gameInPlay = false;
 	}
 
 
