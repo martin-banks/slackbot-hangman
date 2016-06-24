@@ -841,7 +841,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			]
 		}
 		convo.ask(reply , function(response, convo) {
-			guessLetter = (response.text[0]).toUpperCase();
+			guessLetter = (response.text).toUpperCase();
 			var filterGuesses = userGuesses.filter( (v,i,a)=>{
 				return guessLetter === v
 			});
@@ -849,7 +849,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			// compare guess letter to previous letter useage
 			// -- change to filer/map?
-			if(filterGuesses.length === 0){
+			if( filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '') ){
 				for ( var i=0; i<alphabet.length; i++ ){
 					if ( guessLetter === alphabet[i]) {
 						alphabet[i] = ' ';
@@ -864,7 +864,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			// check letter against each letter in puzzle, update puzzleView with letter guessed
 			for(let i = 0; i<(puzzleWord.length); i++){
-				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0){ 
+				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '')){ 
 					status = true;
 					puzzleView[i] = guessLetter; 
 					botLog(puzzleView);
