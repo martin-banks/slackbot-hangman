@@ -760,7 +760,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var gameInPlay = false;
 	var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-	
+	var messageColours = {
+		correct: '',
+		wrong: '',
+		neutral: ''
+	}
 	/*
 	alphabet = alphabet.map((v,i,a)=>{
 		return '*' + v + '*'
@@ -780,8 +784,6 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		clearInterval(gameTimer);
 		botLog('time: ' + (t/10) + ' seconds')
 	}
-
-
 
 	bot.api.users.info({'user': message.user}, (err, response)=>{
 		botLog(response.user.name);
@@ -805,7 +807,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			botLog(puzzleWord);
 			for(var i=0; i<puzzleWord.length; i++){
-				puzzleView.push('--');
+				puzzleView.push('—');
 			};
 			botLog(puzzleView);
 			bot.startConversation(message, askLetter);
@@ -815,11 +817,20 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		}
 	})
 	
-
-
-
 	askLetter = function(response, convo) {
-		convo.ask('*' + puzzleView.join('  ') + '*\n' + 'Pick a letter' , function(response, convo) {
+		let reply = {
+			//'text': 'correct!, you have these letters left',
+			'attachments': [
+				{
+					'title': puzzleView.join('  ') ,
+					'text': 'Pick a letter...',
+					//'color': 'danger',
+					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+					"mrkdwn_in": ["text", 'title', "pretext"]
+				}
+			]
+		}
+		convo.ask(reply , function(response, convo) {
 
 			guessLetter = (response.text[0]).toUpperCase();
 
@@ -855,7 +866,19 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			if(response.text === 'quit'){
 				stopGameTimer();
-				convo.say('quitting...')
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Quitting...',
+							//'text': '',
+							'color': 'danger',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply)
 				quitGame(response, convo);
 				convo.next;
 			} else if (response.text === 'play hangman'){
@@ -864,34 +887,101 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
 				stopGameTimer();
 				botLog( 'winner!');
-				convo.say(answer + '\nWinner!');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Winner!',
+							'text': 'The word was: \_' + answer + '\_',
+							'color': 'good',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply);
 				challenge(response, convo);
 				convo.next();
 			} 
 			else if ( status && filterGuesses.length ===0) {
 				botLog( 'correct!, guess again');
-				convo.say('correct!, you have these letters left');
-				convo.say('```' + alphabet.join('  ') + '```');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Correct!',
+							'text': '\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							'color': 'good',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+			//	convo.say('correct!, you have these letters left');
+				convo.say(reply);
 				askLetter(response, convo);
 				convo.next();
 			} 
 			else if (wrongGuessCount <= 1){
 				stopGameTimer();
 				botLog('you lose, game over');
-				convo.say('you lose, game over')
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Game over!',
+							'text': 'Better luck next time',
+							'color': 'danger',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply)
 				convo.next();
 			}
 			else if ( filterGuesses.length > 0 ) {
-				convo.say('oops, already played that one, try again' );
-				convo.say('```' + alphabet.join('  ') + '```');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Oops, already played that one, try again',
+							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							//'color': 'good',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				};
+				convo.say(reply);
+				//convo.say('```' + alphabet.join('  ') + '```');
 				askLetter(response, convo);
 				convo.next();
 			}
 			else {
 				botLog('wrong guess');
 				wrongGuessCount-=1;
-				convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
-				convo.say('```' + alphabet.join('  ') + '```');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Wrong',
+							"fields": [
+				                {
+				                    "title": "Guesses left" ,
+				                    "value": wrongGuessCount,
+				                    "short": true
+				                }
+				            ],
+							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							'color': 'danger',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				//convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
+				convo.say(reply);
 				askLetter(response, convo);
 				convo.next();
 			} 
@@ -904,20 +994,46 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		gameInPlay = false;
 	}
 	quitGame = (response, convo)=>{
-		convo.say('game has quit');
+		let reply = {
+			//'text': 'correct!, you have these letters left',
+			'attachments': [
+				{
+					'title': 'The game has quit',
+					'text': 'Start again?',
+					//'color': 'good',
+					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+					"mrkdwn_in": ["text", 'title', "pretext"]
+				}
+			]
+		}
+		convo.say(reply);
 		convo.next();
 		gameInPlay = false;
 	}
 
-
-
-
-
-
-
-
-
-
 	
-	
-})
+});
+
+
+/*
+# To do list
+### in no particular order
+
+- get list of active users
+- put all messages in as attachements
+- draw artwork for gallowes
+- add gallowes artwork
+- scoreboard ? / store results ?
+- include intro for theme of words
+- different word groups/themes 
+- display a hint if palyer asks for one
+- create your own quiz to challenge others / temp storage / factory function
+- display timer in results
+- start game in private chat 
+- move into bot-test-clyde channel
+- check whole word for answer 
+- all info into single game object 
+
+
+
+*/
