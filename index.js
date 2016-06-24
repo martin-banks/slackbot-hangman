@@ -729,6 +729,10 @@ var words = [
 	'sea',
 	'factory'
 ];
+words = words.map( (v,i,a) => {
+	return v.toUpperCase();
+});
+botLog(words);
 var r = function(min, max){
 	return min + (Math.floor(Math.random()*max))
 };
@@ -738,6 +742,13 @@ var wrongGuessCount= 5;
 var guessLetter;
 var answer = (puzzleView.toString().replace(/,/g, ''));
 var gameInPlay = false;
+var userGuesses = [];
+var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+alphabet = alphabet.map((v,i,a)=>{
+	return '*' + v + '*'
+});
+botLog(alphabet)
 
 controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var mKeys = Object.keys(message);
@@ -759,9 +770,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			// quiz setup
 			var chooseWord = words[r(0, words.length)]
 			botLog(chooseWord);
+
 			for (var i=0; i<chooseWord.length; i++){
 				puzzleWord.push(chooseWord[i]);
 			}
+
 			botLog(puzzleWord);
 			for(var i=0; i<puzzleWord.length; i++){
 				puzzleView.push('--');
@@ -780,19 +793,38 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	askLetter = function(response, convo) {
 		convo.ask('*' + puzzleView.join('  ') + '*\n' + 'Pick a letter' , function(response, convo) {
 
-			guessLetter = response.text[0];
+			guessLetter = (response.text[0]).toUpperCase();
+
+			var filterGuesses = userGuesses.filter( (v,i,a)=>{
+				return guessLetter === v
+			});
+			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
+
+			if(filterGuesses.length === 0){
+				for ( var i=0; i<alphabet.length; i++ ){
+					if ( '*'+ guessLetter + '*' === alphabet[i]) {
+						alphabet[i] = '~' + guessLetter + '~';
+						userGuesses.push(guessLetter);
+					} 
+				}
+			}
+
+
 			var status = false;
 			//console.log("\x1b[33m", 'playing:', guessLetter, "\x1b[0m")
 
 			for(let i = 0; i<(puzzleWord.length); i++){
-				if(guessLetter === puzzleWord[i] ){ 
+				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0){ 
 					status = true;
 					puzzleView[i] = guessLetter; 
 					console.log(puzzleView)
 					answer = (puzzleView.toString().replace(/,/g, ''));
-		
-					//convo.say('');
-					//convo.next();
+					
+					// nextConvoName(response, convo)
+					// convo.say('');
+					// convo.next();
+
+
 				} 
 			}
 			console.log(answer, status)
@@ -808,6 +840,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			else if ( status ) {
 				console.log( 'correct!, next guess!');
 				convo.say('correct!, guess again');
+				convo.say(alphabet.join('  '));
 				askLetter(response, convo);
 				convo.next();
 			} 
@@ -815,6 +848,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				console.log('you lose, game over');
 				convo.say('you lose, game over')
 				//document.querySelector('body').innerHTML = '<h1>Game over</h1>'
+				convo.next();
+			}
+			else if ( filterGuesses.length > 0 ) {
+				convo.say('oops, already played that one, try again' );
+				askLetter(response, convo);
 				convo.next();
 			}
 			else {
