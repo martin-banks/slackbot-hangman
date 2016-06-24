@@ -726,7 +726,15 @@ var r = function(min, max){
 	return min + (Math.floor(Math.random()*max))
 };
 
+var hangmanConfig = {
+	words: [
+		'tree',
+		'beach',
+		'sea',
+		'factory'
+	],
 
+}
 var words = [
 	'tree',
 	'beach',
@@ -738,16 +746,12 @@ words = words.map( (v,i,a) => {
 });
 botLog(words);
 
-
-
 // start hangman game
 controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	//function startTimer(c){
 		
 	//}
-	
-
-
+	// set up
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
 	var playerName;
@@ -760,18 +764,22 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var gameInPlay = false;
 	var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-	var messageColours = {
-		correct: '',
-		wrong: '',
-		neutral: ''
-	}
 	/*
 	alphabet = alphabet.map((v,i,a)=>{
 		return '*' + v + '*'
 	});
 	*/
-	botLog(alphabet);
+	//botLog(alphabet);
 
+	var messageColours = {
+		correct: '',
+		wrong: '',
+		neutral: ''
+	} 
+	// available as parto slack markup: good, warning, danger
+	// neutral applie when config set
+
+	// game timer
 	var t=0;
 	var gameTimer;
 	function startGameTimer(){
@@ -785,11 +793,12 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		botLog('time: ' + (t/10) + ' seconds')
 	}
 
+
 	bot.api.users.info({'user': message.user}, (err, response)=>{
 		botLog(response.user.name);
 		playerName = response.user.name;
 
-		
+		// check user is allowed to play
 		if (playerName === 'martin' && !gameInPlay) {
 			// if user allowed to play
 			gameInPlay = true;
@@ -817,6 +826,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		}
 	})
 	
+	// bot asks for letter / start convo
 	askLetter = function(response, convo) {
 		let reply = {
 			//'text': 'correct!, you have these letters left',
@@ -831,14 +841,14 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			]
 		}
 		convo.ask(reply , function(response, convo) {
-
 			guessLetter = (response.text[0]).toUpperCase();
-
 			var filterGuesses = userGuesses.filter( (v,i,a)=>{
 				return guessLetter === v
 			});
 			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
 
+			// compare guess letter to previous letter useage
+			// -- change to filer/map?
 			if(filterGuesses.length === 0){
 				for ( var i=0; i<alphabet.length; i++ ){
 					if ( guessLetter === alphabet[i]) {
@@ -850,13 +860,14 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			var status = false;
 			botLog(('playing: ' + guessLetter))
+			answer = (puzzleView.toString().replace(/,/g, ''));
 
+			// check letter against each letter in puzzle, update puzzleView with letter guessed
 			for(let i = 0; i<(puzzleWord.length); i++){
 				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0){ 
 					status = true;
 					puzzleView[i] = guessLetter; 
-					botLog(puzzleView)
-					answer = (puzzleView.toString().replace(/,/g, ''));
+					botLog(puzzleView);
 					// nextConvoName(response, convo)
 					// convo.say('');
 					// convo.next();
@@ -864,6 +875,8 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			}
 			botLog(answer, status)
 
+
+			// actions to take 
 			if(response.text === 'quit'){
 				stopGameTimer();
 				let reply = {
@@ -881,8 +894,35 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.say(reply)
 				quitGame(response, convo);
 				convo.next;
-			} else if (response.text === 'play hangman'){
+			} 
+			else if (response.text === 'play hangman'){
 				convo.say('you\'re already playing!')
+			}
+			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
+				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
+				stopGameTimer();
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Winner!',
+							'text': 'The word was: \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+							"fields": [
+				                {
+				                    "title": "You got it in" ,
+				                    "value": (t/10) + ' seconds',
+				                    "short": true
+				                }
+				            ],
+							'color': 'good',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply);
+				challenge(response, convo);
+				convo.next();
 			}
 			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
 				stopGameTimer();
@@ -892,7 +932,14 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					'attachments': [
 						{
 							'title': 'Winner!',
-							'text': 'The word was: \_' + answer + '\_',
+							'text': 'The word was: \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+							"fields": [
+				                {
+				                    "title": "You got it in" ,
+				                    "value": (t/10) + ' seconds',
+				                    "short": true
+				                }
+				            ],
 							'color': 'good',
 							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
 							"mrkdwn_in": ["text", 'title', "pretext"]
@@ -1017,22 +1064,31 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 /*
 # To do list
-### in no particular order
 
+## Priority
 - get list of active users
-- put all messages in as attachements
 - draw artwork for gallowes
 - add gallowes artwork
+
+
+### in no particular order
 - scoreboard ? / store results ?
 - include intro for theme of words
 - different word groups/themes 
 - display a hint if palyer asks for one
 - create your own quiz to challenge others / temp storage / factory function
-- display timer in results
 - start game in private chat 
 - move into bot-test-clyde channel
-- check whole word for answer 
+
 - all info into single game object 
+
+
+## in prgress
+- put all messages in as attachements
+
+## Done
+- display timer in results
+- check whole word for answer 
 
 
 
