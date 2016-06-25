@@ -81,7 +81,7 @@ var hangmanConfig = { // not full in use yet
 };
 
 var words = [
-	'method',
+/*	'method',
 	'function',
 	'jquery',
 	'closures',
@@ -90,32 +90,31 @@ var words = [
 	'object',
 	'awesome',
 	'array',
-	'api',
 	'callback',
 	'javascript',
 	'concatenate',
 	'promise',
 	'asynchronous',
-	'giyhub',
+	'github',
 	'queryselector',
 	'delegate',
 	'dom',
-	'refactor'
+	'refactor',*/
+	'api'
 ];
 
 words = words.map( (v,i,a) => {
 	return v.toUpperCase();
 });
-//botLog(words);
+
 
 
 // start hangman game
-controller.hears('play hangman', 'direct_message', (bot, message)=>{
+controller.hears('test hangman', 'direct_message', (bot, message)=>{
 	// set up
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
 	var playerName;
-
 	var puzzleWord = [];
 	var puzzleView = [];
 	var wrongGuessCount = 0;
@@ -124,20 +123,6 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	var gameInPlay = false;
 	var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-	/*
-	alphabet = alphabet.map((v,i,a)=>{
-		return '*' + v + '*'
-	});
-	*/
-	//botLog(alphabet);
-
-	var messageColours = {
-		correct: '',
-		wrong: '',
-		neutral: ''
-	} 
-	// available as parto slack markup: good, warning, danger
-	// neutral applie when config set
 
 	// game timer
 	var t=0;
@@ -153,19 +138,8 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		botLog('time: ' + (t/10) + ' seconds')
 	}
 
-
-
 	// get oline users
 	var onlineUserList = [];
-	
-	/*function getHumanUsersPresence(id){
-		bot.api.users.getPresence({'user': id}, function(err, response){
-			if (response.presence == 'active'){
-				onlineUserList[id] = response.presence
-			}
-		})
-	};*/
-
 	function getHumanUsersPresence(id){
 		bot.api.users.getPresence({'user': id}, function(err, response){
 			if (response.presence == 'active'){
@@ -174,12 +148,11 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		})
 	};
 	function pushUserNames(id, userName){
-		bot.api.users.getPresence({'user': id}, function(err, response){
+		bot.api.users.getPresence({'user': id}, function(err, response) {
 			if (response.presence == 'active'){
 				onlineUserList.push(userName);
-				botLog('id: ' + userName)
-			}
-			
+				botLog('id: ' + userName);
+			}	
 		})
 	}
 	// get human users	
@@ -191,24 +164,17 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 			for (var i=0; i<l; i++){
 				
 				if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
-					//var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+					//var realName = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name // get realreal name
 					var id = response.members[i].id;
 					var userName = response.members[i].name;
 					pushUserNames(id, userName)
 				}
-				/*if ( i === (response.members.length)-1 ){
-					setTimeout(function(){
-						let k = Object.keys(onlineUserList);
-						bot.botkit.log(onlineUserList);	
-						return onlineUserList
-					},500)
-				}*/
 			} // end for loop
 		}); // end api call
 	} // end function	
 
 
-
+	// api call for user information
 	bot.api.users.info({'user': message.user}, (err, response)=>{
 		botLog(response.user.name);
 		playerName = response.user.name;
@@ -240,7 +206,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	// bot asks for letter / start convo
 	askLetter = function(response, convo) {
 		let reply = {
-			//'text': 'correct!, you have these letters left',
+			// include an introduction to the game
 			'attachments': [
 				{
 					'title': puzzleView.join('  ') ,
@@ -253,12 +219,15 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		}
 		convo.ask(reply , function(response, convo) {
 			guessLetter = (response.text).toUpperCase();
+			// filter previous guesses against new guess
 			var filterGuesses = userGuesses.filter( (v,i,a)=>{
 				return guessLetter === v
 			});
 			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
 
 			// compare guess letter to previous letter useage
+			// if letter hasn' been played filterGuesses is empty,
+			// and if entry doesn't match full puzzleWord
 			// -- change to filer/map?
 			if( filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '') ){
 				for ( var i=0; i<alphabet.length; i++ ){
@@ -275,29 +244,25 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 			// check letter against each letter in puzzle, update puzzleView with letter guessed
 			for(let i = 0; i<(puzzleWord.length); i++){
-				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '')){ 
-					status = true;
-					puzzleView[i] = guessLetter; 
+				// if guess matches letter at index and is not a repeat and doesn't match puzzleWord
+				if( (guessLetter === puzzleWord[i]) && (filterGuesses.length === 0) && (response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '')) ){ 
+					status = true; // is correct guess
+					puzzleView[i] = guessLetter; // update puzzleView
 					botLog(puzzleView);
-					// nextConvoName(response, convo)
-					// convo.say('');
-					// convo.next();
 				} 
 			}
 			botLog(answer, status)
 
 
-			// actions to take 
+			// actions to take /////////////
+			// if user types 'quit'
 			if(response.text === 'quit'){
 				stopGameTimer();
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Quitting...',
-							//'text': '',
 							'color': 'danger',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
 							"mrkdwn_in": ["text", 'title', "pretext"]
 						}
 					]
@@ -306,21 +271,21 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				quitGame(response, convo);
 				convo.next;
 			} 
+			// if user tries to start a new game while another is already in play
 			else if (response.text === 'play hangman'){
 				convo.say('you\'re already playing!')
 			}
-			// guess whole word
+
+			// if user guess whole word
 			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
 				botLog(response.text)
 				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
 				stopGameTimer();
-				getHumanUsers()
+				getHumanUsers(); // run function to find all human users in group
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Winner!',
-							//'text': ,
 							"fields": [
 								{
 									"title": "The word was:" ,
@@ -332,14 +297,9 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 									"value": (t/10) + ' seconds',
 									"short": true
 								},
-								/*{
-									"title": "Challenge mode available" ,
-									//"value": 'Do you want to see who is online now?',
-									"short": false
-								}*/
 							],
 							'color': 'good',
-							//'image_url': hangmanConfig.winImage,
+							//'image_url': hangmanConfig.winImage, // new image for win state?
 							"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
 						}
 					]
@@ -348,17 +308,17 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				asktoChallenge(response, convo);
 				convo.next();
 			}
-			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+
+			// win game by guessing last letter
+			else if ( puzzleView.toString().replace(/,/g, '') === puzzleWord.toString().replace(/,/g, '') ) {
 				botLog('got right letters');
 				stopGameTimer();
-
+				getHumanUsers(); // run function to find all human users in group
 				botLog( 'winner!');
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Winner!',
-							//'text': ,
 							"fields": [
 								{
 									"title": "The word was:" ,
@@ -370,47 +330,78 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 									"value": (t/10) + ' seconds',
 									"short": true
 								},
-								/*{
-									"title": "Challenge mode available" ,
-									//"value": 'Do you want to see who is online now?',
-									"short": false
-								}*/
 							],
 							'color': 'good',
-							//'image_url': hangmanConfig.winImage,
+							//'image_url': hangmanConfig.winImage, // win image
 							"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
 						}
 					]
 				}
 				convo.say(reply);
-				challenge(response, convo);
+				asktoChallenge(response, convo);
 				convo.next();
 			} 
+
+			// guess correct letter
 			else if ( status && filterGuesses.length ===0) {
 				botLog( 'correct!, guess again');
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Correct!',
-							'text': '\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
-							'color': 'good',
-							//'image_url': hangmanConfig.images[wrongGuessCount],
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
+				botLog(answer + " | " + puzzleWord.toString().replace(/,/g, '') )
+				/*
+				if( puzzleView.toString().replace(/,/g, '')  === puzzleWord.toString().replace(/,/g, '') ) {
+					let reply = {
+						'attachments': [
+							{
+								'title': 'Winner!',
+								"fields": [
+									{
+										"title": "The word was:" ,
+										"value": ' \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+										"short": true
+									},
+									{
+										"title": "You got it in" ,
+										"value": (t/10) + ' seconds',
+										"short": true
+									},
+								],
+								'color': 'good',
+								//'image_url': hangmanConfig.winImage, // win image
+								"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+							}
+						]
+					}
+					convo.say(reply);
+					asktoChallenge(response, convo);
+					convo.next();
 				}
-			//	convo.say('correct!, you have these letters left');
-				convo.say(reply);
-				askLetter(response, convo);
-				convo.next();
+				else {*/
+					let reply = {
+						'attachments': [
+							{
+								'title': 'Correct!',
+								'text': '\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+								'color': 'good',
+								//'image_url': hangmanConfig.images[wrongGuessCount],
+								"mrkdwn_in": ["text", 'title', "pretext"]
+							}
+						]
+					}
+					convo.say(reply);
+					askLetter(response, convo);
+					convo.next();
+				//}
+				
 			} 
+
+
+
+
+			// game over - ran out of lives
 			else if (wrongGuessCount >= 4){
 				wrongGuessCount += 1;
 				stopGameTimer();
 				botLog('you lose, game over');
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Game over!',
@@ -424,9 +415,10 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.say(reply)
 				convo.next();
 			}
+
+			// played a repeat letter 
 			else if ( filterGuesses.length > 0 ) {
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Oops, already played that one, try again',
@@ -438,15 +430,14 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					]
 				};
 				convo.say(reply);
-				//convo.say('```' + alphabet.join('  ') + '```');
 				askLetter(response, convo);
 				convo.next();
 			}
+			// user guessed wrong
 			else {
 				botLog('wrong guess');
 				wrongGuessCount += 1;
 				let reply = {
-					//'text': 'correct!, you have these letters left',
 					'attachments': [
 						{
 							'title': 'Wrong',
@@ -464,7 +455,6 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 						}
 					]
 				}
-				//convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
 				convo.say(reply);
 				askLetter(response, convo);
 				convo.next();
@@ -472,25 +462,16 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 
 		});
 	}
+
 	// challenge someone else
 	challenge = function(response, convo) {
 		//getHumanUsers();
 		let reply = {
-			//'text': 'correct!, you have these letters left',
 			'attachments': [
 				{
 					'title': onlineUserList.join(', '),
-					'text' :   'are online now, find out out who\'s better'  ,
-					/*"fields": [
-						{
-							"title": "Guesses left" ,
-							"value": wrongGuessCount,
-							"short": true
-						}
-					],*/
-					
+					'text' : 'are online now, find out out who\'s better',
 					'color': hangmanConfig.colour.blue,
-					//'image_url': hangmanConfig.images[wrongGuessCount],
 					"mrkdwn_in": ["text", 'title', "pretext"]
 				}
 			]
@@ -501,8 +482,10 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		gameInPlay = false;	
 	};
 
+	// ask user if they want to see who else is online
 	asktoChallenge = function(response, convo) {
 		convo.ask('\*Do you want to see who\'s online now?\* \_(yes / no)\_' , function(response, convo) {
+			// check esponse
 			if(response.text.toUpperCase() === 'YES' || response.text.toUpperCase() === 'Y'){
 				let reply = {
 					'attachments': [
@@ -520,23 +503,20 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				convo.say('thanks for playing');
 				convo.next();
 			}
-		})
-		
+		})	
 	}
 
+	// quit game
 	quitGame = (response, convo)=>{
 		let reply = {
-			//'text': 'correct!, you have these letters left',
 			'attachments': [
 				{
 					'title': 'The game has quit',
 					'text': 'Start again?',
-					//'color': 'good',
-					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
 					"mrkdwn_in": ["text", 'title', "pretext"]
 				}
 			]
-		}
+		};
 		convo.say(reply);
 		convo.next();
 		gameInPlay = false;
@@ -550,25 +530,30 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 # To do list
 
 ## Priority
-- format challenge messages
+- tidy up code/notes
+- include intro for theme of words
+- introduce new step for intro before ask for letter
+- display a hint if palyer asks for one
+- show images for wrong and game over screens
+- win by guessing letters
 
 
 ### in no particular order
 - scoreboard ? / store results ?
-- include intro for theme of words
 - different word groups/themes 
-- display a hint if palyer asks for one
 - create your own quiz to challenge others / temp storage / factory function
-- start game in private chat 
+- start game in private chat from other channels
 - move into bot-test-clyde channel
 - attachment reponse as template function
-- all info into single game object 
 - conditional for timer to show minutes and seconds
 - random messages on right/wrong guess
+- capture player name in config and store puzzleWord as key/value
+- store player results in config object
+- post results of game into #clyde-bot-test channel 
 
 
 ## in prgress
-- put all messages in as attachements
+- all info into single game object 
 
 
 ## Done
@@ -577,7 +562,8 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 - get list of active users
 - draw artwork for gallowes
 - add gallowes artwork
-
+- format challenge messages
+- put all messages in as attachements
 
 */
 
