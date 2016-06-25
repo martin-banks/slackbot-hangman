@@ -28,7 +28,624 @@ bot.startRTM(function(error, whichBot, payload) {
 });
 
 
+// helper functions
+var botLog = (param)=>{
+	console.log("\x1b[33m", param, "\x1b[0m")
+}
+var r = function(min, max){
+	return min + (Math.floor(Math.random()*max))
+};
 
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// HANGMAN BOT ///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+var hangmanConfig = { // not full in use yet
+	words: [
+		'method',
+		'function',
+		'jquery',
+		'closures',
+		'variable',
+		'scope',
+		'object',
+		'awesome',
+		'array',
+		'api',
+		'callback',
+		'javascript',
+		'concatenate',
+		'promise',
+		'asynchronous',
+		'giyhub',
+		'queryselector',
+		'delegate',
+		'dom',
+		'refactor'
+	],
+	images: [
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_1.png',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_2.png',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_3.png',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_4.png',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_5.png',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_6.png'
+	],
+	colour: {
+		blue: '#3aa3e3'
+	}
+
+};
+
+var words = [
+	'method',
+	'function',
+	'jquery',
+	'closures',
+	'variable',
+	'scope',
+	'object',
+	'awesome',
+	'array',
+	'api',
+	'callback',
+	'javascript',
+	'concatenate',
+	'promise',
+	'asynchronous',
+	'giyhub',
+	'queryselector',
+	'delegate',
+	'dom',
+	'refactor'
+];
+
+words = words.map( (v,i,a) => {
+	return v.toUpperCase();
+});
+//botLog(words);
+
+
+// start hangman game
+controller.hears('play hangman', 'direct_message', (bot, message)=>{
+	// set up
+	var mKeys = Object.keys(message);
+	bot.botkit.log(mKeys);
+	var playerName;
+
+	var puzzleWord = [];
+	var puzzleView = [];
+	var wrongGuessCount = 0;
+	var guessLetter;
+	var answer = (puzzleView.toString().replace(/,/g, ''));
+	var gameInPlay = false;
+	var userGuesses = [];
+	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+	/*
+	alphabet = alphabet.map((v,i,a)=>{
+		return '*' + v + '*'
+	});
+	*/
+	//botLog(alphabet);
+
+	var messageColours = {
+		correct: '',
+		wrong: '',
+		neutral: ''
+	} 
+	// available as parto slack markup: good, warning, danger
+	// neutral applie when config set
+
+	// game timer
+	var t=0;
+	var gameTimer;
+	function startGameTimer(){
+		gameTimer = setInterval(gameTimerAction, 100);
+	}
+	function gameTimerAction(){
+		t+=1
+	};
+	function stopGameTimer(){
+		clearInterval(gameTimer);
+		botLog('time: ' + (t/10) + ' seconds')
+	}
+
+
+
+	// get oline users
+	var onlineUserList = [];
+	
+	/*function getHumanUsersPresence(id){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList[id] = response.presence
+			}
+		})
+	};*/
+
+	function getHumanUsersPresence(id){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList.push(id)
+			}
+		})
+	};
+	function pushUserNames(id, userName){
+		bot.api.users.getPresence({'user': id}, function(err, response){
+			if (response.presence == 'active'){
+				onlineUserList.push(userName);
+				botLog('id: ' + userName)
+			}
+			
+		})
+	}
+	// get human users	
+	function getHumanUsers(){
+		bot.api.users.list({},function(err,response) {
+			if (err) {bot.botkit.log('something went wrong', err)};
+			var output = [];
+			var l = response.members.length
+			for (var i=0; i<l; i++){
+				
+				if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
+					//var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
+					var id = response.members[i].id;
+					var userName = response.members[i].name;
+					pushUserNames(id, userName)
+				}
+				/*if ( i === (response.members.length)-1 ){
+					setTimeout(function(){
+						let k = Object.keys(onlineUserList);
+						bot.botkit.log(onlineUserList);	
+						return onlineUserList
+					},500)
+				}*/
+			} // end for loop
+		}); // end api call
+	} // end function	
+
+
+
+	bot.api.users.info({'user': message.user}, (err, response)=>{
+		botLog(response.user.name);
+		playerName = response.user.name;
+
+		// check user is allowed to play
+		if ( (playerName === 'martin' || playerName === 'jess') && !gameInPlay ) {
+			// if user allowed to play
+			gameInPlay = true;
+			startGameTimer();
+			botLog('game on');
+			// quiz setup
+			var chooseWord = words[r(0, words.length)]
+			botLog(chooseWord);
+			for (var i=0; i<chooseWord.length; i++){
+				puzzleWord.push(chooseWord[i]);
+			}
+			botLog(puzzleWord);
+			for(var i=0; i<puzzleWord.length; i++){
+				puzzleView.push('—');
+			};
+			botLog(puzzleView);
+			bot.startConversation(message, askLetter);
+		} else {
+			botLog('Access denied.\nGame not started');
+			gameInPlay = false;
+		}
+	})
+	
+	// bot asks for letter / start convo
+	askLetter = function(response, convo) {
+		let reply = {
+			//'text': 'correct!, you have these letters left',
+			'attachments': [
+				{
+					'title': puzzleView.join('  ') ,
+					'text': 'Pick a letter...',
+					//'color': 'danger',
+					'image_url': hangmanConfig.images[wrongGuessCount],
+					"mrkdwn_in": ["text", 'title', "pretext"]
+				}
+			]
+		}
+		convo.ask(reply , function(response, convo) {
+			guessLetter = (response.text).toUpperCase();
+			var filterGuesses = userGuesses.filter( (v,i,a)=>{
+				return guessLetter === v
+			});
+			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
+
+			// compare guess letter to previous letter useage
+			// -- change to filer/map?
+			if( filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '') ){
+				for ( var i=0; i<alphabet.length; i++ ){
+					if ( guessLetter === alphabet[i]) {
+						alphabet[i] = ' ';
+						userGuesses.push(guessLetter);
+					} 
+				}
+			}
+
+			var status = false;
+			botLog(('playing: ' + guessLetter))
+			answer = (puzzleView.toString().replace(/,/g, ''));
+
+			// check letter against each letter in puzzle, update puzzleView with letter guessed
+			for(let i = 0; i<(puzzleWord.length); i++){
+				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '')){ 
+					status = true;
+					puzzleView[i] = guessLetter; 
+					botLog(puzzleView);
+					// nextConvoName(response, convo)
+					// convo.say('');
+					// convo.next();
+				} 
+			}
+			botLog(answer, status)
+
+
+			// actions to take 
+			if(response.text === 'quit'){
+				stopGameTimer();
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Quitting...',
+							//'text': '',
+							'color': 'danger',
+							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply)
+				quitGame(response, convo);
+				convo.next;
+			} 
+			else if (response.text === 'play hangman'){
+				convo.say('you\'re already playing!')
+			}
+			// guess whole word
+			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
+				botLog(response.text)
+				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
+				stopGameTimer();
+				getHumanUsers()
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Winner!',
+							//'text': ,
+							"fields": [
+								{
+									"title": "The word was:" ,
+									"value": ' \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+									"short": true
+								},
+								{
+									"title": "You got it in" ,
+									"value": (t/10) + ' seconds',
+									"short": true
+								},
+								/*{
+									"title": "Challenge mode available" ,
+									//"value": 'Do you want to see who is online now?',
+									"short": false
+								}*/
+							],
+							'color': 'good',
+							//'image_url': hangmanConfig.winImage,
+							"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+						}
+					]
+				};
+				convo.say(reply);
+				asktoChallenge(response, convo);
+				convo.next();
+			}
+			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
+				botLog('got right letters');
+				stopGameTimer();
+
+				botLog( 'winner!');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Winner!',
+							//'text': ,
+							"fields": [
+								{
+									"title": "The word was:" ,
+									"value": ' \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+									"short": true
+								},
+								{
+									"title": "You got it in" ,
+									"value": (t/10) + ' seconds',
+									"short": true
+								},
+								/*{
+									"title": "Challenge mode available" ,
+									//"value": 'Do you want to see who is online now?',
+									"short": false
+								}*/
+							],
+							'color': 'good',
+							//'image_url': hangmanConfig.winImage,
+							"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+						}
+					]
+				}
+				convo.say(reply);
+				challenge(response, convo);
+				convo.next();
+			} 
+			else if ( status && filterGuesses.length ===0) {
+				botLog( 'correct!, guess again');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Correct!',
+							'text': '\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							'color': 'good',
+							//'image_url': hangmanConfig.images[wrongGuessCount],
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+			//	convo.say('correct!, you have these letters left');
+				convo.say(reply);
+				askLetter(response, convo);
+				convo.next();
+			} 
+			else if (wrongGuessCount >= 4){
+				wrongGuessCount += 1;
+				stopGameTimer();
+				botLog('you lose, game over');
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Game over!',
+							'text': 'Better luck next time',
+							'color': 'danger',
+							'image_url': hangmanConfig.images[wrongGuessCount],
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				convo.say(reply)
+				convo.next();
+			}
+			else if ( filterGuesses.length > 0 ) {
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Oops, already played that one, try again',
+							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							//'color': 'good',
+							//'image_url': hangmanConfig.images[wrongGuessCount],
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				};
+				convo.say(reply);
+				//convo.say('```' + alphabet.join('  ') + '```');
+				askLetter(response, convo);
+				convo.next();
+			}
+			else {
+				botLog('wrong guess');
+				wrongGuessCount += 1;
+				let reply = {
+					//'text': 'correct!, you have these letters left',
+					'attachments': [
+						{
+							'title': 'Wrong',
+							/*"fields": [
+								{
+									"title": "Guesses left" ,
+									"value": wrongGuessCount,
+									"short": true
+								}
+							],*/
+							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
+							'color': 'danger',
+							//'image_url': hangmanConfig.images[wrongGuessCount],
+							"mrkdwn_in": ["text", 'title', "pretext"]
+						}
+					]
+				}
+				//convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
+				convo.say(reply);
+				askLetter(response, convo);
+				convo.next();
+			} 
+
+		});
+	}
+	// challenge someone else
+	challenge = function(response, convo) {
+		//getHumanUsers();
+		let reply = {
+			//'text': 'correct!, you have these letters left',
+			'attachments': [
+				{
+					'title': onlineUserList.join(', '),
+					'text' :   'are online now, find out out who\'s better'  ,
+					/*"fields": [
+						{
+							"title": "Guesses left" ,
+							"value": wrongGuessCount,
+							"short": true
+						}
+					],*/
+					
+					'color': hangmanConfig.colour.blue,
+					//'image_url': hangmanConfig.images[wrongGuessCount],
+					"mrkdwn_in": ["text", 'title', "pretext"]
+				}
+			]
+		}
+		botLog( 'online users: ' + onlineUserList.join(', ') );
+		convo.say( reply );
+		convo.next();	
+		gameInPlay = false;	
+	};
+
+	asktoChallenge = function(response, convo) {
+		convo.ask('\*Do you want to see who\'s online now?\* \_(yes / no)\_' , function(response, convo) {
+			if(response.text.toUpperCase() === 'YES' || response.text.toUpperCase() === 'Y'){
+				let reply = {
+					'attachments': [
+						{
+							'title':  'Looking for players...'
+						}
+					]
+				}
+				botLog('online users: ' + onlineUserList.join(', ') );
+				convo.say( reply )
+				challenge(response, convo);
+				convo.next();
+			} 
+			else {
+				convo.say('thanks for playing');
+				convo.next();
+			}
+		})
+		
+	}
+
+	quitGame = (response, convo)=>{
+		let reply = {
+			//'text': 'correct!, you have these letters left',
+			'attachments': [
+				{
+					'title': 'The game has quit',
+					'text': 'Start again?',
+					//'color': 'good',
+					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
+					"mrkdwn_in": ["text", 'title', "pretext"]
+				}
+			]
+		}
+		convo.say(reply);
+		convo.next();
+		gameInPlay = false;
+	}
+
+	
+});
+
+
+/*
+# To do list
+
+## Priority
+- format challenge messages
+
+
+### in no particular order
+- scoreboard ? / store results ?
+- include intro for theme of words
+- different word groups/themes 
+- display a hint if palyer asks for one
+- create your own quiz to challenge others / temp storage / factory function
+- start game in private chat 
+- move into bot-test-clyde channel
+- attachment reponse as template function
+- all info into single game object 
+- conditional for timer to show minutes and seconds
+- random messages on right/wrong guess
+
+
+## in prgress
+- put all messages in as attachements
+
+
+## Done
+- display timer in results
+- check whole word for answer 
+- get list of active users
+- draw artwork for gallowes
+- add gallowes artwork
+
+
+*/
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// Tests and experiments /////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// list of controlls
+controller.hears(['what can you do'],['mention', 'direct_message'], function(bot, message){
+	var botCommands = {
+		'text': 'This is what I do so far...',
+		'attachments': [
+			{
+				'title': 'jQuery',
+				'text': 'Jess-bot can\'t resist telling you what he thinks about jQuery',
+			},
+			{
+				'title': 'what day is it?',
+				'text': 'Clyde will tell you what the day is'
+			},
+			{
+				'title': 'what is the date',
+				'text': 'Clyde will tell you waht the date is'
+			},
+			{
+				'title': 'Open the ---- doors',
+				'text': 'Clyde may or may not help depending what type of door you ask him to open'
+			}, 
+			{
+				'title': "@clydebot: what is the answer to the ultimate question",
+				'text': 'You can guess what comes next... \n Use toString() on a previously created varible to return a number (as a string) into the chat'
+			},
+			{
+				'title': 'While you\'re typing -- REMOVED',
+				'text': 'Randomly return a random message while user types'
+			},
+			{
+				'title': 'user names',
+				'text': 'tpye "user list" to list all users and bots in js1syd'
+			},
+			{
+				'title': 'human users',
+				'text': 'tpye "human users" to list all users in js1syd'
+			},
+			{
+				'title': 'bot users',
+				'text': 'tpye "bot users" to list all bots in js1syd'
+			},
+			{
+				'title': 'user ---',
+				'text': 'tpye "users" and their user/screen name for basic user information including their online status'
+			},
+			{
+				'title': 'Random emoji',
+				'text': 'Display a random emoji character'
+			}
+		]
+	}
+	return bot.reply(message, botCommands)
+});
 
 
 var randomNumber = function(param){
@@ -411,81 +1028,6 @@ controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, messa
 })
 
 
-////////////////////////////////////////////////////////////////////////////////
-// list of controlls
-controller.hears(['what can you do'],['mention', 'direct_message'], function(bot, message){
-	var botCommands = {
-		'text': 'This is what I do so far...',
-		'attachments': [
-			{
-				'title': 'jQuery',
-				'text': 'Jess-bot can\'t resist telling you what he thinks about jQuery',
-			},
-			{
-				'title': 'what day is it?',
-				'text': 'Clyde will tell you what the day is'
-			},
-			{
-				'title': 'what is the date',
-				'text': 'Clyde will tell you waht the date is'
-			},
-			{
-				'title': 'Open the ---- doors',
-				'text': 'Clyde may or may not help depending what type of door you ask him to open'
-			}, 
-			{
-				'title': "@clydebot: what is the answer to the ultimate question",
-				'text': 'You can guess what comes next... \n Use toString() on a previously created varible to return a number (as a string) into the chat'
-			},
-			{
-				'title': 'While you\'re typing -- REMOVED',
-				'text': 'Randomly return a random message while user types'
-			},
-			{
-				'title': 'user names',
-				'text': 'tpye "user list" to list all users and bots in js1syd'
-			},
-			{
-				'title': 'human users',
-				'text': 'tpye "human users" to list all users in js1syd'
-			},
-			{
-				'title': 'bot users',
-				'text': 'tpye "bot users" to list all bots in js1syd'
-			},
-			{
-				'title': 'user ---',
-				'text': 'tpye "users" and their user/screen name for basic user information including their online status'
-			},
-			{
-				'title': 'Random emoji',
-				'text': 'Display a random emoji character'
-			}
-		]
-	}
-	return bot.reply(message, botCommands)
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*  This is all wrong
 
@@ -544,13 +1086,6 @@ IDEA: To get list of online users:
 
 
 */
-
-
-
-
-
-
-
 
 
 bot.botkit.log('bot started')
@@ -740,486 +1275,3 @@ controller.hears('create channel called', 'direct_message', function(bot, messag
 	bot.botkit.log('done')
 })
 
-
-
-
-
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-// HANGMAN BOT ///////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-var botLog = (param)=>{
-	console.log("\x1b[33m", param, "\x1b[0m")
-}
-var r = function(min, max){
-	return min + (Math.floor(Math.random()*max))
-};
-
-var hangmanConfig = {
-	words: [
-		'tree',
-		'beach',
-		'sea',
-		'factory'
-	],
-
-}
-var words = [
-	'tree',
-	'beach',
-	'sea',
-	'factory'
-];
-words = words.map( (v,i,a) => {
-	return v.toUpperCase();
-});
-//botLog(words);
-
-
-
-
-// start hangman game
-controller.hears('play hangman', 'direct_message', (bot, message)=>{
-	//function startTimer(c){
-		
-	//}
-	// set up
-	var mKeys = Object.keys(message);
-	bot.botkit.log(mKeys);
-	var playerName;
-
-	var puzzleWord = [];
-	var puzzleView = [];
-	var wrongGuessCount= 5;
-	var guessLetter;
-	var answer = (puzzleView.toString().replace(/,/g, ''));
-	var gameInPlay = false;
-	var userGuesses = [];
-	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-	/*
-	alphabet = alphabet.map((v,i,a)=>{
-		return '*' + v + '*'
-	});
-	*/
-	//botLog(alphabet);
-
-	var messageColours = {
-		correct: '',
-		wrong: '',
-		neutral: ''
-	} 
-	// available as parto slack markup: good, warning, danger
-	// neutral applie when config set
-
-	// game timer
-	var t=0;
-	var gameTimer;
-	function startGameTimer(){
-		gameTimer = setInterval(gameTimerAction, 100);
-	}
-	function gameTimerAction(){
-		t+=1
-	};
-	function stopGameTimer(){
-		clearInterval(gameTimer);
-		botLog('time: ' + (t/10) + ' seconds')
-	}
-
-
-
-	// get oline users
-	var onlineUserList = ['test'];
-	
-	/*function getHumanUsersPresence(id){
-		bot.api.users.getPresence({'user': id}, function(err, response){
-			if (response.presence == 'active'){
-				onlineUserList[id] = response.presence
-			}
-		})
-	};*/
-
-	function getHumanUsersPresence(id){
-		bot.api.users.getPresence({'user': id}, function(err, response){
-			if (response.presence == 'active'){
-				onlineUserList.push(id)
-			}
-		})
-	};
-
-	function pushUserNames(id, userName){
-		bot.api.users.getPresence({'user': id}, function(err, response){
-			if (response.presence == 'active'){
-				onlineUserList.push(userName);
-				botLog('id: ' + userName)
-			}
-			
-		})
-	}
-	
-	// get human users	
-	function getHumanUsers(){
-		bot.api.users.list({},function(err,response) {
-			if (err) {bot.botkit.log('something went wrong', err)};
-			var output = [];
-			var l = response.members.length
-			for (var i=0; i<l; i++){
-				
-				if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
-					//var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
-					var id = response.members[i].id;
-					var userName = response.members[i].name;
-					pushUserNames(id, userName)
-				}
-				/*if ( i === (response.members.length)-1 ){
-					setTimeout(function(){
-						let k = Object.keys(onlineUserList);
-						bot.botkit.log(onlineUserList);	
-						return onlineUserList
-					},500)
-				}*/
-			} // end for loop
-		}); // end api call
-	} // end function	
-
-
-	
-
-
-
-
-
-
-
-
-	bot.api.users.info({'user': message.user}, (err, response)=>{
-		botLog(response.user.name);
-		playerName = response.user.name;
-
-		// check user is allowed to play
-		if (playerName === 'martin' && !gameInPlay) {
-			// if user allowed to play
-			gameInPlay = true;
-			startGameTimer();
-
-			botLog('game on');
-
-			// quiz setup
-			var chooseWord = words[r(0, words.length)]
-			botLog(chooseWord);
-
-			for (var i=0; i<chooseWord.length; i++){
-				puzzleWord.push(chooseWord[i]);
-			}
-
-			botLog(puzzleWord);
-			for(var i=0; i<puzzleWord.length; i++){
-				puzzleView.push('—');
-			};
-			botLog(puzzleView);
-			bot.startConversation(message, askLetter);
-		} else {
-			botLog('Access denied.\nGame not started');
-			gameInPlay = false;
-		}
-	})
-	
-	// bot asks for letter / start convo
-	askLetter = function(response, convo) {
-		let reply = {
-			//'text': 'correct!, you have these letters left',
-			'attachments': [
-				{
-					'title': puzzleView.join('  ') ,
-					'text': 'Pick a letter...',
-					//'color': 'danger',
-					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-					"mrkdwn_in": ["text", 'title', "pretext"]
-				}
-			]
-		}
-		convo.ask(reply , function(response, convo) {
-			guessLetter = (response.text).toUpperCase();
-			var filterGuesses = userGuesses.filter( (v,i,a)=>{
-				return guessLetter === v
-			});
-			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
-
-			// compare guess letter to previous letter useage
-			// -- change to filer/map?
-			if( filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '') ){
-				for ( var i=0; i<alphabet.length; i++ ){
-					if ( guessLetter === alphabet[i]) {
-						alphabet[i] = ' ';
-						userGuesses.push(guessLetter);
-					} 
-				}
-			}
-
-			var status = false;
-			botLog(('playing: ' + guessLetter))
-			answer = (puzzleView.toString().replace(/,/g, ''));
-
-			// check letter against each letter in puzzle, update puzzleView with letter guessed
-			for(let i = 0; i<(puzzleWord.length); i++){
-				if(guessLetter === puzzleWord[i] && filterGuesses.length === 0 && response.text.toUpperCase() !== puzzleWord.toString().replace(/,/g, '')){ 
-					status = true;
-					puzzleView[i] = guessLetter; 
-					botLog(puzzleView);
-					// nextConvoName(response, convo)
-					// convo.say('');
-					// convo.next();
-				} 
-			}
-			botLog(answer, status)
-
-
-			// actions to take 
-			if(response.text === 'quit'){
-				stopGameTimer();
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Quitting...',
-							//'text': '',
-							'color': 'danger',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				}
-				convo.say(reply)
-				quitGame(response, convo);
-				convo.next;
-			} 
-			else if (response.text === 'play hangman'){
-				convo.say('you\'re already playing!')
-			}
-			// guess whole word
-			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
-				botLog(response.text)
-				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
-				stopGameTimer();
-				getHumanUsers()
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Winner!',
-							'text': 'The word was: \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
-							"fields": [
-				                {
-				                    "title": "You got it in" ,
-				                    "value": (t/10) + ' seconds',
-				                    "short": true
-				                },
-				                 {
-				                    "title": "Challenge mode" ,
-				                    "value": 'Do you want to see who is online now?',
-				                    "short": true
-				                }
-				            ],
-							'color': 'good',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				};
-				convo.say(reply);
-				asktoChallenge(response, convo);
-				convo.next();
-			}
-			else if (answer === puzzleWord.toString().replace(/,/g, '') ) {
-				botLog('got right letters');
-				stopGameTimer();
-
-				botLog( 'winner!');
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Winner!',
-							'text': 'The word was: \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
-							"fields": [
-				                {
-				                    "title": "You got it in" ,
-				                    "value": (t/10) + ' seconds',
-				                    "short": true
-				                }
-				            ],
-							'color': 'good',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				}
-				convo.say(reply);
-				challenge(response, convo);
-				convo.next();
-			} 
-			else if ( status && filterGuesses.length ===0) {
-				botLog( 'correct!, guess again');
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Correct!',
-							'text': '\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
-							'color': 'good',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				}
-			//	convo.say('correct!, you have these letters left');
-				convo.say(reply);
-				askLetter(response, convo);
-				convo.next();
-			} 
-			else if (wrongGuessCount <= 1){
-				stopGameTimer();
-				botLog('you lose, game over');
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Game over!',
-							'text': 'Better luck next time',
-							'color': 'danger',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				}
-				convo.say(reply)
-				convo.next();
-			}
-			else if ( filterGuesses.length > 0 ) {
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Oops, already played that one, try again',
-							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
-							//'color': 'good',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				};
-				convo.say(reply);
-				//convo.say('```' + alphabet.join('  ') + '```');
-				askLetter(response, convo);
-				convo.next();
-			}
-			else {
-				botLog('wrong guess');
-				wrongGuessCount-=1;
-				let reply = {
-					//'text': 'correct!, you have these letters left',
-					'attachments': [
-						{
-							'title': 'Wrong',
-							"fields": [
-				                {
-				                    "title": "Guesses left" ,
-				                    "value": wrongGuessCount,
-				                    "short": true
-				                }
-				            ],
-							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
-							'color': 'danger',
-							//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-							"mrkdwn_in": ["text", 'title', "pretext"]
-						}
-					]
-				}
-				//convo.say('wrong guess. you have *' + wrongGuessCount + '* guesses left');
-				convo.say(reply);
-				askLetter(response, convo);
-				convo.next();
-			} 
-
-		});
-	}
-	// challenge someone else
-	challenge = function(response, convo) {
-		//getHumanUsers();
-		botLog('online users from challenge: ' + onlineUserList);
-		
-		convo.say(onlineUserList);
-		convo.next();	
-		gameInPlay = false;	
-	};
-
-	asktoChallenge = function(response, convo) {
-		convo.ask('want to challenge?' , function(response, convo) {
-			if(response.text === 'yes'){
-				botLog('online users from challenge: ' + onlineUserList.join(', '));
-				convo.say('Looking for online users... ' + onlineUserList.join(', ') )
-				challenge(response, convo);
-				convo.next();
-			} 
-			else {
-				convo.say('thanks for playing');
-				convo.next();
-			}
-		})
-		
-	}
-
-	quitGame = (response, convo)=>{
-		let reply = {
-			//'text': 'correct!, you have these letters left',
-			'attachments': [
-				{
-					'title': 'The game has quit',
-					'text': 'Start again?',
-					//'color': 'good',
-					//'image_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',
-					"mrkdwn_in": ["text", 'title', "pretext"]
-				}
-			]
-		}
-		convo.say(reply);
-		convo.next();
-		gameInPlay = false;
-	}
-
-	
-});
-
-
-/*
-# To do list
-
-## Priority
-- get list of active users
-- draw artwork for gallowes
-- add gallowes artwork
-
-
-### in no particular order
-- scoreboard ? / store results ?
-- include intro for theme of words
-- different word groups/themes 
-- display a hint if palyer asks for one
-- create your own quiz to challenge others / temp storage / factory function
-- start game in private chat 
-- move into bot-test-clyde channel
-- attachment reponse as template function
-- all info into single game object 
-- conditional for timer to show minutes and seconds
-
-
-## in prgress
-- put all messages in as attachements
-
-## Done
-- display timer in results
-- check whole word for answer 
-
-
-
-*/
