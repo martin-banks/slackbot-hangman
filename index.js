@@ -81,7 +81,7 @@ var hangmanConfig = { // not full in use yet
 };
 
 var words = [
-/*	'method',
+	'method',
 	'function',
 	'jquery',
 	'closures',
@@ -99,7 +99,7 @@ var words = [
 	'queryselector',
 	'delegate',
 	'dom',
-	'refactor',*/
+	'refactor',
 	'api'
 ];
 
@@ -110,7 +110,7 @@ words = words.map( (v,i,a) => {
 
 
 // start hangman game
-controller.hears('test hangman', 'direct_message', (bot, message)=>{
+controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	// set up
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
