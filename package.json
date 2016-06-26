@@ -1,7 +1,7 @@
 {
   "name": "my-first-slackbot",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "JS1: My First Slackbot",
   "main": "index.js",
   "scripts": {

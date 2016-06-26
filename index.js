@@ -44,42 +44,50 @@ var r = function(min, max){
 //////////////////////////////////////////////////////////////////////
 
 var hangmanConfig = { // not full in use yet
-	words: [
-		'method',
-		'function',
-		'jquery',
-		'closures',
-		'variable',
-		'scope',
-		'object',
-		'awesome',
-		'array',
-		'api',
-		'callback',
-		'javascript',
-		'concatenate',
-		'promise',
-		'asynchronous',
-		'github',
-		'queryselector',
-		'delegate',
-		'dom',
-		'refactor'
-	],
+	javascript: {
+		intro: 'Can you guess the word from this JavaScript inpsired set?',
+		text: 'Play by either choosing letters or go for the whole word if you think you have it.\nYou can end the game at any time by typing \`quit\`',
+		words: [
+			'method',
+			'function',
+			'jquery',
+			'closures',
+			'variable',
+			'scope',
+			'object',
+			'awesome',
+			'array',
+			'api',
+			'callback',
+			'javascript',
+			'concatenate',
+			'promise',
+			'asynchronous',
+			'github',
+			'queryselector',
+			'delegate',
+			'dom',
+			'refactor'
+		]
+	},
 	images: [
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_1.png',
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_2.png',
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_3.png',
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_4.png',
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_5.png',
-		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_6.png'
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_1.jpg',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_2.jpg',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_3.jpg',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_4.jpg',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_5.jpg',
+		'https://dl.dropboxusercontent.com/u/6839372/hangmanBotArtwork/hangman_6.jpg'
 	],
 	colour: {
 		blue: '#3aa3e3'
 	}
-
 };
 
+hangmanConfig.javascript.words = hangmanConfig.javascript.words.map( (v,i,a) => {
+	return v.toUpperCase();
+});
+
+/*
 var words = [
 	'method',
 	'function',
@@ -102,10 +110,8 @@ var words = [
 	'refactor',
 	'api'
 ];
+*/
 
-words = words.map( (v,i,a) => {
-	return v.toUpperCase();
-});
 
 /*
 chat.postMessage = {
@@ -236,7 +242,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 							return 'Failed to find the right answer in '+ t +' seconds'
 						}
 					})(),
-					,
+					
 					'color': (()=>{
 						if (gameWin === true){
 							return 'good'
@@ -268,7 +274,8 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 			startGameTimer();
 			botLog('game on');
 			// quiz setup
-			var chooseWord = words[r(0, words.length)]
+
+			var chooseWord = hangmanConfig.javascript.words[r(0, hangmanConfig.javascript.words.length)]
 			botLog(chooseWord);
 			for (var i=0; i<chooseWord.length; i++){
 				puzzleWord.push(chooseWord[i]);
@@ -278,12 +285,27 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 				puzzleView.push('—');
 			};
 			botLog(puzzleView);
-			bot.startConversation(message, askLetter);
+			bot.startConversation(message, showIntro);
 		} else {
 			botLog('Access denied.\nGame not started');
 			gameInPlay = false;
 		}
-	})
+	});
+
+	showIntro = (response, convo)=>{
+		let intro = {
+			attachments: [
+				{
+					title: hangmanConfig.javascript.intro,
+					text: hangmanConfig.javascript.text,
+					mrkdwn: ['title', 'text']
+				}
+			]
+		};
+		convo.say(intro);
+		askLetter(response, convo);
+		convo.next()
+	}
 	
 	// bot asks for letter / start convo
 	askLetter = function(response, convo) {
@@ -351,7 +373,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 				}
 				convo.say(reply)
 				quitGame(response, convo);
-				convo.next;
+				convo.next();
 			} 
 			// if user tries to start a new game while another is already in play
 			else if (response.text === 'play hangman'){
@@ -431,35 +453,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 			else if ( status && filterGuesses.length ===0) {
 				botLog( 'correct!, guess again');
 				botLog(answer + " | " + puzzleWord.toString().replace(/,/g, '') )
-				/*
-				if( puzzleView.toString().replace(/,/g, '')  === puzzleWord.toString().replace(/,/g, '') ) {
-					let reply = {
-						'attachments': [
-							{
-								'title': 'Winner!',
-								"fields": [
-									{
-										"title": "The word was:" ,
-										"value": ' \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
-										"short": true
-									},
-									{
-										"title": "You got it in" ,
-										"value": (t/10) + ' seconds',
-										"short": true
-									},
-								],
-								'color': 'good',
-								//'image_url': hangmanConfig.winImage, // win image
-								"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
-							}
-						]
-					}
-					convo.say(reply);
-					asktoChallenge(response, convo);
-					convo.next();
-				}
-				else {*/
+				
 					let reply = {
 						'attachments': [
 							{
@@ -522,21 +516,18 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 			// user guessed wrong
 			else {
 				botLog('wrong guess');
+				botLog ('wronguesscount ' + wrongGuessCount);
+				botLog(hangmanConfig.images[wrongGuessCount])
 				wrongGuessCount += 1;
+				botLog ('wronguesscount ' + wrongGuessCount);
+				botLog(hangmanConfig.images[wrongGuessCount])
 				let reply = {
 					'attachments': [
 						{
+							'image_url': hangmanConfig.images[wrongGuessCount],
 							'title': 'Wrong',
-							/*"fields": [
-								{
-									"title": "Guesses left" ,
-									"value": wrongGuessCount,
-									"short": true
-								}
-							],*/
 							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
 							'color': 'danger',
-							'image_url': hangmanConfig.images[wrongGuessCount],
 							"mrkdwn_in": ["text", 'title', "pretext"]
 						}
 					]
@@ -569,7 +560,15 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 
 	// ask user if they want to see who else is online
 	asktoChallenge = function(response, convo) {
-		convo.ask('\*Do you want to see who\'s online now?\* \_(yes / no)\_' , function(response, convo) {
+		let askToFuindUsers = {
+					'attachments': [
+						{
+							'title':  '\*Do you want to see who\'s online now?\* \_(yes / no)\_',
+							"mrkdwn_in": ['title']
+						}
+					]
+				}
+		convo.ask( askToFuindUsers, function(response, convo) {
 			// check esponse
 			if(response.text.toUpperCase() === 'YES' || response.text.toUpperCase() === 'Y'){
 				let reply = {
@@ -597,7 +596,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 			'attachments': [
 				{
 					'title': 'The game has quit',
-					'text': 'Start again?',
+					'text': 'Play again?',
 					"mrkdwn_in": ["text", 'title', "pretext"]
 				}
 			]
@@ -618,7 +617,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 - tidy up code/notes
 - include intro for theme of words
 - introduce new step for intro before ask for letter
-- display a hint if palyer asks for one
+- display a hint if palyer asks for one ??
 
 
 ### in no particular order
@@ -631,6 +630,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 - random messages on right/wrong guess
 - capture player name in config and store puzzleWord as key/value
 - store player results in config object
+- add timeout to ask to find users to prevent memory leak
 
 
 ## in prgress
