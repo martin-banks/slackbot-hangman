@@ -215,25 +215,46 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 	} // end function	
 
 	// post message to other channel
-	function postToChannel( playerName, wrongGuessCount ){
+	function postToChannel( playerName, wrongGuessCount, gameWin ){
 		var postMsg = {
 			channel: 'C1HC4RN1H', 		// channel id - req
 			//text: 'blah',
 			attachments: [
 				{
-					'title': playerName + ' won a game of hangman',
-					'text': 'Finding the right answer in '+ t +' seconds with ' + wrongGuessCount + ' wrong guesses',
-					'color': 'good',
+					'title': (()=>{
+						botLog('checking results...');
+						if ( gameWin === true ){
+							return playerName + ' won a game of hangman'
+						} else {
+							return playerName + ' lost a game of hangman'
+						}
+					})(),
+					'text': (()=>{
+						if (gameWin === true){
+							return 'Found the right answer in '+ t +' seconds with ' + wrongGuessCount + ' wrong guesses'
+						} else {
+							return 'Failed to find the right answer in '+ t +' seconds'
+						}
+					})(),
+					,
+					'color': (()=>{
+						if (gameWin === true){
+							return 'good'
+						} else {
+							return 'danger'
+						}
+					})(),
 					//'image_url': hangmanConfig.winImage, // win image
-					as_user = 'false',
-					user_name: 'Clyde',		//
-					icon_url = 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',		//
+					'as_user': false,
+					'user_name': 'Clyde',		//
+					'icon_url': 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',		//
 					"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
 				}
 			]
 		}
 		bot.api.chat.postMessage(postMsg);
 	};
+
 
 	// api call for user information
 	bot.api.users.info({'user': message.user}, (err, response)=>{
@@ -340,7 +361,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 			// if user guess whole word
 			else if (response.text.toUpperCase() === puzzleWord.toString().replace(/,/g, '') ){
 				botLog(response.text)
-				botLog('full answer correct' + puzzleWord.toString().replace(/,/g, '') );
+				botLog('full answer correct ' + puzzleWord.toString().replace(/,/g, '') );
 				stopGameTimer();
 				getHumanUsers(); // run function to find all human users in group
 				let reply = {
@@ -366,7 +387,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 					]
 				};
 				convo.say(reply);
-				postToChannel( playerName, wrongGuessCount )
+				postToChannel( playerName, wrongGuessCount, true )
 				asktoChallenge(response, convo);
 				convo.next();
 			}
@@ -401,7 +422,7 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 				}
 				convo.say(reply);
 				
-				postToChannel( playerName, wrongGuessCount );
+				postToChannel( playerName, wrongGuessCount, true );
 				asktoChallenge(response, convo);
 				convo.next();
 			} 
@@ -475,7 +496,8 @@ controller.hears('test hangman', 'direct_message', (bot, message)=>{
 							"mrkdwn_in": ["text", 'title', "pretext"]
 						}
 					]
-				}
+				};
+				postToChannel( playerName, wrongGuessCount, false );
 				convo.say(reply)
 				convo.next();
 			}
