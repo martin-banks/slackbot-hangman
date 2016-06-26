@@ -60,7 +60,7 @@ var hangmanConfig = { // not full in use yet
 		'concatenate',
 		'promise',
 		'asynchronous',
-		'giyhub',
+		'github',
 		'queryselector',
 		'delegate',
 		'dom',
@@ -107,10 +107,46 @@ words = words.map( (v,i,a) => {
 	return v.toUpperCase();
 });
 
+/*
+chat.postMessage = {
+	channel = 'C1HC4RN1H', 		// channel id - req
+	text = '',			// message -req or attachment
+	parse = '',			// 
+	link_names = '',	//
+	attachments = [
+		{
+			'title': 'Winner!',
+			"fields": [
+				{
+					"title": "The word was:" ,
+					"value": ' \_' + puzzleWord.toString().replace(/,/g, '') + '\_',
+					"short": true
+				},
+				{
+					"title": "You got it in" ,
+					"value": (t/10) + ' seconds',
+					"short": true
+				},
+			],
+			'color': 'good',
+			//'image_url': hangmanConfig.winImage, // win image
+			"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+		}
+	],	// 
+	unfurl_links = '',	//
+	unfurl_media = '',	//
+	username = '',		//
+	as_user = '',		//
+	icon_url = '',		//
+	icon_emoji = ''		//
+}
+
+chat.postMessage?channel=x&text=x&parse=x&link_names=x&attachments=x&unfurl_links=t&unfurl_media=tqtq&username=t&as_user=t&icon_url=t&icon_emoji=t&pretty=1
+*/
 
 
 // start hangman game
-controller.hears('play hangman', 'direct_message', (bot, message)=>{
+controller.hears('test hangman', 'direct_message', (bot, message)=>{
 	// set up
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
@@ -135,7 +171,12 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 	};
 	function stopGameTimer(){
 		clearInterval(gameTimer);
-		botLog('time: ' + (t/10) + ' seconds')
+		if ((t / 10) < 60){
+			t = (t/10) + ' seconds'
+		} else {
+			t = Math.floor((t / 10) / 60) + ' minutes ' + Math.floor((t/10) % 60) + ' seconds'
+		}
+		botLog('time: ' + (t/10) + ' seconds');
 	}
 
 	// get oline users
@@ -173,6 +214,26 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 		}); // end api call
 	} // end function	
 
+	// post message to other channel
+	function postToChannel( playerName, wrongGuessCount ){
+		var postMsg = {
+			channel: 'C1HC4RN1H', 		// channel id - req
+			//text: 'blah',
+			attachments: [
+				{
+					'title': playerName + ' won a game of hangman',
+					'text': 'Finding the right answer in '+ t +' seconds with ' + wrongGuessCount + ' wrong guesses',
+					'color': 'good',
+					//'image_url': hangmanConfig.winImage, // win image
+					as_user = 'false',
+					user_name: 'Clyde',		//
+					icon_url = 'http://vignette1.wikia.nocookie.net/pacman/images/2/2b/Clydeeghost.png',		//
+					"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+				}
+			]
+		}
+		bot.api.chat.postMessage(postMsg);
+	};
 
 	// api call for user information
 	bot.api.users.info({'user': message.user}, (err, response)=>{
@@ -212,7 +273,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					'title': puzzleView.join('  ') ,
 					'text': 'Pick a letter...',
 					//'color': 'danger',
-					'image_url': hangmanConfig.images[wrongGuessCount],
+					//'image_url': hangmanConfig.images[wrongGuessCount],
 					"mrkdwn_in": ["text", 'title', "pretext"]
 				}
 			]
@@ -294,7 +355,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 								},
 								{
 									"title": "You got it in" ,
-									"value": (t/10) + ' seconds',
+									"value": (t) + ' seconds',
 									"short": true
 								},
 							],
@@ -305,6 +366,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					]
 				};
 				convo.say(reply);
+				postToChannel( playerName, wrongGuessCount )
 				asktoChallenge(response, convo);
 				convo.next();
 			}
@@ -327,7 +389,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 								},
 								{
 									"title": "You got it in" ,
-									"value": (t/10) + ' seconds',
+									"value": (t) + ' seconds',
 									"short": true
 								},
 							],
@@ -338,6 +400,8 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 					]
 				}
 				convo.say(reply);
+				
+				postToChannel( playerName, wrongGuessCount );
 				asktoChallenge(response, convo);
 				convo.next();
 			} 
@@ -450,7 +514,7 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 							],*/
 							'text': 'You have these letters left:\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`',
 							'color': 'danger',
-							//'image_url': hangmanConfig.images[wrongGuessCount],
+							'image_url': hangmanConfig.images[wrongGuessCount],
 							"mrkdwn_in": ["text", 'title', "pretext"]
 						}
 					]
@@ -459,7 +523,6 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 				askLetter(response, convo);
 				convo.next();
 			} 
-
 		});
 	}
 
@@ -534,8 +597,6 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 - include intro for theme of words
 - introduce new step for intro before ask for letter
 - display a hint if palyer asks for one
-- show images for wrong and game over screens
-- win by guessing letters
 
 
 ### in no particular order
@@ -545,11 +606,9 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 - start game in private chat from other channels
 - move into bot-test-clyde channel
 - attachment reponse as template function
-- conditional for timer to show minutes and seconds
 - random messages on right/wrong guess
 - capture player name in config and store puzzleWord as key/value
 - store player results in config object
-- post results of game into #clyde-bot-test channel 
 
 
 ## in prgress
@@ -564,6 +623,10 @@ controller.hears('play hangman', 'direct_message', (bot, message)=>{
 - add gallowes artwork
 - format challenge messages
 - put all messages in as attachements
+- win by guessing letters
+- show images for wrong and game over screens
+- conditional for timer to show minutes and seconds
+- post results of game into #clyde-bot-test channel 
 
 */
 
@@ -645,6 +708,24 @@ controller.hears(['hello'], ['mention'], function(whichBot, message) {
 
 controller.hears(['pacman'], ['ambient'], function(whichBot, message) {
 	whichBot.reply(message, "Run away!!");
+});
+
+// post messa ge to different channel
+controller.hears(['post to clyde'], ['direct_message'], (bot, message)=>{
+	var postMsg = {
+		channel: 'C1HC4RN1H', 		// channel id - req
+		text: 'blah',
+		attachments: [
+			{
+				'title': 'post to bot-test-clyde',
+				'text': 'some text in here.',
+				'color': 'good',
+				//'image_url': hangmanConfig.winImage, // win image
+				"mrkdwn_in": ["text", 'title', "pretext", 'fields', 'value']
+			}
+		]
+	}
+	bot.api.chat.postMessage(postMsg);
 });
 
 
