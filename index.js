@@ -107,7 +107,7 @@ hangmanConfig.javascript.words = hangmanConfig.javascript.words.map( (v,i,a) => 
 });
 
 // command to start a game
-var startGameCommand = 'play hangman';
+var startGameCommand = 'test hangman';
 // start hangman game
 controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 
@@ -131,13 +131,14 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	var gameInPlay = false;
 	//var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+	hangmanConfig.users[message.user].alphabet = alphabet;
 	var chooseWord = ()=>{
 		return (hangmanConfig.javascript.words[r(0, hangmanConfig.javascript.words.length)])
 	}
 	var markDownFields = ["text", "pretext", 'fields', 'value'];
 
 	var remainingLetters = ()=>{
-		return	'\*You have these letters left:\*\n' + '\`\`\`' + alphabet.join('  ') + '\`\`\`'
+		return	'\*You have these letters left:\*\n' + '\`\`\`' + hangmanConfig.users[message.user].alphabet.join('  ') + '\`\`\`'
 	}
 
 	// game timer
@@ -362,6 +363,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			});
 			var filterGuesses = hangmanConfig.users[response.user].filterGuesses;
 
+			var alphabet = hangmanConfig.users[response.user].alphabet
 			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
 
 			// compare guess letter to previous letter useage
@@ -371,7 +373,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			if( filterGuesses.length === 0 && guessLetter !== chosenWord ){
 				for ( var i=0; i<alphabet.length; i++ ){
 					if ( guessLetter === alphabet[i]) {
-						alphabet[i] = ' ';
+						hangmanConfig.users[response.user].alphabet[i] = ' ';
 						hangmanConfig.users[response.user].userGuesses.push(guessLetter);
 					} 
 				}
