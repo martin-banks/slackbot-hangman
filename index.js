@@ -98,30 +98,38 @@ var hangmanConfig = { // not full in use yet
 		users: [ 'martin', 'jess', 'amysimmons' ],
 		title: "Access denied",
 		text: 'This game is still in development, you do not have access to play yet.'
-	}
-	
+	},
+	users: {}
 };
 
 hangmanConfig.javascript.words = hangmanConfig.javascript.words.map( (v,i,a) => {
 	return v.toUpperCase();
 });
 
-var startGameCommand = 'test hangman';
+// command to start a game
+var startGameCommand = 'play hangman';
 // start hangman game
-controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
+controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
+
+	hangmanConfig.users[message.user] = {};
+	hangmanConfig.users[message.user].userGuesses = [];
+	hangmanConfig.users[message.user].wrongGuessCount = 0;
+	hangmanConfig.users[message.user].puzzleView = [];
+	var puzzleView = hangmanConfig.users[message.user].puzzleView = [];
+
 	// set up
 	var mKeys = Object.keys(message);
 	bot.botkit.log(mKeys);
 	var playerName;
 //	var puzzleWord = [];
-	var puzzleView = [];
-	var wrongGuessCount = 0;
-	var guessLetter;
-	var answer = ()=>{
+//	var puzzleView = [];
+//	var wrongGuessCount = 0;
+	//var guessLetter;
+	var answer = (puzzleView)=>{
 		return (puzzleView.toString().replace(/,/g, ''));
 	}
 	var gameInPlay = false;
-	var userGuesses = [];
+	//var userGuesses = [];
 	var alphabet = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
 	var chooseWord = ()=>{
 		return (hangmanConfig.javascript.words[r(0, hangmanConfig.javascript.words.length)])
@@ -240,19 +248,22 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 			// quiz setup
 			//chosenWord = chooseWord()
 			
-			hangmanConfig.users = {};
-			hangmanConfig.users[playerName] = {};
-			hangmanConfig.users[playerName].currentWord = chooseWord();
-			hangmanConfig.users[playerName].gameInPlay = true;
+			//hangmanConfig.users = {};
+			//hangmanConfig.users[message.user] = {};
+			hangmanConfig.users[message.user].currentWord = chooseWord();
+			hangmanConfig.users[message.user].gameInPlay = true;
+			//hangmanConfig.users[message.user].puzzleview = [];
 
-			chosenWord = hangmanConfig.users[playerName].currentWord;
-			gameInPlay = hangmanConfig.users[playerName].gameInPlay
+			var chosenWord = hangmanConfig.users[message.user].currentWord;
+			gameInPlay = hangmanConfig.users[message.user].gameInPlay;
 			
+
 			botLog('chosenWord = ' + chosenWord);
 			for(var i=0; i<chosenWord.length; i++){
-				puzzleView.push('—');
+				hangmanConfig.users[message.user].puzzleView.push('—');
 			};
-			botLog('puzzleview: ' + puzzleView);
+			botLog('puzzleview: ' + hangmanConfig.users[message.user].puzzleview);
+			puzzleview = hangmanConfig.users[message.user].puzzleview;
 			bot.startConversation(message, showIntro);
 		}
 
@@ -298,7 +309,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 			]
 		};
 		convo.say(intro);
-		askLetter(response, convo);
+		askLetter(response, convo, puzzleView);
 		convo.next()
 	};
 
@@ -319,7 +330,8 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 	}
 	
 	// bot asks for letter / start convo
-	askLetter = function(response, convo) {
+	askLetter = (response, convo, puzzleview)=> {
+		
 		let reply = {
 			// include an introduction to the game
 			'attachments': [
@@ -332,39 +344,52 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 			]
 		}
 		convo.ask(reply , function(response, convo) {
-			guessLetter = (response.text).toUpperCase();
+			botLog('response keys: ' + Object.keys(response) + ' | ' + response.user)
+
+			hangmanConfig.users[response.user].guessLetter = (response.text).toUpperCase()
+			var guessLetter = hangmanConfig.users[response.user].guessLetter
+
+			var userGuesses = hangmanConfig.users[response.user].userGuesses
+
+			var chosenWord = hangmanConfig.users[response.user].currentWord;
+			var wrongGuessCount = hangmanConfig.users[message.user].wrongGuessCount
+
+			puzzleview = hangmanConfig.users[response.user].puzzleView;
+
 			// filter previous guesses against new guess
-			var filterGuesses = userGuesses.filter( (v,i,a)=>{
+			hangmanConfig.users[response.user].filterGuesses = userGuesses.filter( (v,i,a)=>{
 				return guessLetter === v
 			});
+			var filterGuesses = hangmanConfig.users[response.user].filterGuesses;
+
 			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
 
 			// compare guess letter to previous letter useage
 			// if letter hasn't been played filterGuesses is empty,
 			// and if entry doesn't match full puzzleWord
 			// -- change to filer/map?
-			if( filterGuesses.length === 0 && response.text.toUpperCase() !== chosenWord ){
+			if( filterGuesses.length === 0 && guessLetter !== chosenWord ){
 				for ( var i=0; i<alphabet.length; i++ ){
 					if ( guessLetter === alphabet[i]) {
 						alphabet[i] = ' ';
-						userGuesses.push(guessLetter);
+						hangmanConfig.users[response.user].userGuesses.push(guessLetter);
 					} 
 				}
 			}
 
 			var status = false;
 			botLog(('playing: ' + guessLetter))
-
 			// check letter against each letter in puzzle, update puzzleView with letter guessed
 			for(let i = 0; i<(chosenWord.length); i++){
 				// if guess matches letter at index and is not a repeat and doesn't match puzzleWord
 				if( (guessLetter === chosenWord[i]) && (filterGuesses.length === 0) && (response.text.toUpperCase() !== chosenWord) ){ 
 					status = true; // is correct guess
-					puzzleView[i] = guessLetter; // update puzzleView
+					hangmanConfig.users[response.user].puzzleView[i] = guessLetter; // update puzzleView
+					puzzleview = hangmanConfig.users[response.user].puzzleView;
 					botLog(puzzleView);
 				} 
 			}
-			botLog('answer: ' + answer() + ' | status: ' + status)
+			botLog('answer: ' + answer(puzzleview) + ' | status: ' + status)
 
 
 			// actions to take /////////////
@@ -395,6 +420,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 				safeLog('full answer correct ' + chosenWord );
 				stopGameTimer();
 				getHumanUsers(); // run function to find all human users in group
+
 				let reply = {
 					'attachments': [
 						{
@@ -424,7 +450,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 			}
 
 			// win game by guessing last letter
-			else if ( answer() === chosenWord ) {
+			else if ( answer(puzzleview) === chosenWord ) {
 				stopGameTimer();
 				getHumanUsers(); // run function to find all human users in group
 				safeLog( 'winner! guessed all correct letters');
@@ -459,7 +485,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 			// guess correct letter
 			else if ( status && filterGuesses.length ===0) {
 				safeLog( 'correct!, guess again');
-				botLog(answer() + " | " + chosenWord )
+				botLog(answer(puzzleview) + " | " + chosenWord )
 				let reply = {
 					'attachments': [
 						{
@@ -472,13 +498,14 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 					]
 				}
 				convo.say(reply);
-				askLetter(response, convo);
+				askLetter(response, convo, puzzleview);
 				convo.next();				
 			} 
 
 			// game over - ran out of lives
 			else if (wrongGuessCount >= 4){
-				wrongGuessCount += 1;
+				hangmanConfig.users[message.user].wrongGuessCount += 1;
+				var wrongGuessCount = hangmanConfig.users[message.user].wrongGuessCount
 				stopGameTimer();
 				dangerLog('you lose, game over');
 				let reply = {
@@ -509,7 +536,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 					]
 				};
 				convo.say(reply);
-				askLetter(response, convo);
+				askLetter(response, convo, puzzleview);
 				convo.next();
 			}
 
@@ -518,7 +545,8 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 				dangerLog('wrong guess');
 				warnLog ('wronguesscount ' + wrongGuessCount);
 				botLog(hangmanConfig.images[wrongGuessCount])
-				wrongGuessCount += 1;
+				hangmanConfig.users[message.user].wrongGuessCount += 1;
+				var wrongGuessCount = hangmanConfig.users[message.user].wrongGuessCount
 				botLog ('wronguesscount ' + wrongGuessCount);
 				botLog(hangmanConfig.images[wrongGuessCount])
 				let reply = {
@@ -533,7 +561,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 					]
 				}
 				convo.say(reply);
-				askLetter(response, convo);
+				askLetter(response, convo, puzzleview);
 				convo.next();
 			} 
 		})
@@ -613,7 +641,6 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 ## Priority
 - tidy up code/notes
 - introduce new step for intro before ask for letter
-- display a hint if palyer asks for one ??
 
 
 ### in no particular order
@@ -627,6 +654,7 @@ controller.hears(startGameCommand, 'direct_message', (bot, message)=>{
 - capture player name in config and store puzzleWord as key/value
 - store player results in config object
 - add timeout to ask to find users to prevent memory leak
+- trade life for letter
 
 
 ## in prgress
