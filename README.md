@@ -1,4 +1,75 @@
-# My First Slackbot
+
+General Assembly - JavaScript Sydney
+# Hangman SlackBot
+
+A simple game of hangman in SlackBot form. 
+SlackBot will choose a word at random from a predefined list displaying a redacted version. As you guess letters the 'puzzleview' will update with the letters you have got right and show a list of the letters that you have not yet giessed. Get a letter wrong and you lose a life. Lose all you lives and it's game over. 
+
+## Commands
+- `play hangman` as a direct message (to @clydebot) to start the game.
+- `quit` to quit the game.
+
+## Playing the game
+- Type any single letter to guess (typing more than letter one will count as guessing the word).
+- If the letter is anywhere in the word it will be updated into the puzzle view
+- If it is not, you lose a life.
+- If you still have lives and have not completed the word you can guess another letter.
+- Think you know the answer? Type the whole word (watch out for typos!).
+- Guess a wrong word and you will lose a life.
+
+## Winning the game
+There are two ways to win:
+- Guess all of the letters individually.
+- Type in the full word 
+- When hte game is finished the bot will post a message into a public channel (#clyde-bot-test here) telling everyone if you won or lost and how long the game lasted.
+
+
+### Additional
+##### Multiple players
+Earlier versions had issues with multiple, simultaneous players. Recents updates should resove this by storing game progress in a custom object under their user ID. 
+
+##### Code improvements
+- Think this refactored with promises and/or callbacks.
+- could be streamlined by making use of callbacks (?).
+- Repetition in replies could be streamlined
+- inconsistencies with concatenated strings and es6 templates in console.logs
+- separate bot replies or introduce a 'thinking' message to reduce gaps between user input and bot response.
+
+
+### Tech in use
+##### Botkit: 
+- Get list of users
+- Filter users as human (or bot)
+- Filter users by online status (active)
+- Get channel information
+- Post into other channels
+- Listen/respond to user input
+- Examine user input to determine user name, post content
+- Use mark down to style game responses 
+- Use attachments to style text and post images
+
+##### ES6
+- Arrow functions: `()=>{}`
+- Templates: `${myVar}`
+- using `let` to restrict message replies to that function closure
+
+##### JavaScript
+- Select random word for game
+- Perform different actions based on user input
+- Loop over arrays comparing user input to stored values
+- Store game information in object key/value pairs
+- Update game information in object key/value pairs
+- Convert responses/values to uppercase to remove case sensitive issues
+- Set interval to use as timer for game: 1/10th second values
+- Mathematical operators and conditionals to dispaly time results in seconds or minutes and seconds 
+- Chaining api calls 
+- Console.log helper fiunctions with different colours coding to aid readability while testing.
+
+
+
+
+----------------------------------
+## My First Slackbot - BRIEF
 
 This project serves as a base to start creating a slackbot.
 

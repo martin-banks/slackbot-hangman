@@ -245,11 +245,11 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			var chosenWord = hangmanConfig.users[message.user].currentWord;
 			gameInPlay = hangmanConfig.users[message.user].gameInPlay;
 
-			botLog('chosenWord = ' + chosenWord);
+			botLog(`chosenWord = ${chosenWord}`);
 			for(var i=0; i<chosenWord.length; i++){
 				hangmanConfig.users[message.user].puzzleView.push('—');
 			};
-			botLog('puzzleview: ' + hangmanConfig.users[message.user].puzzleview);
+			botLog(`puzzleview: ${hangmanConfig.users[message.user].puzzleview}`);
 			// update puzzle view
 			puzzleview = hangmanConfig.users[message.user].puzzleview;
 			// start quiz convo
@@ -332,7 +332,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			]
 		}
 		convo.ask(reply , (response, convo)=> {
-			botLog('response keys: ' + Object.keys(response) + ' | ' + response.user)
+			botLog(`response keys: ${Object.keys(response)} | ${response.user}`)
 
 			// update config and variables with game information stored for that user
 			hangmanConfig.users[response.user].guessLetter = (response.text).toUpperCase()
@@ -349,7 +349,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			var filterGuesses = hangmanConfig.users[response.user].filterGuesses;
 
 			var alphabet = hangmanConfig.users[response.user].alphabet
-			botLog( ('filtered guesses: '+ filterGuesses + ', length: ' + filterGuesses.length) )
+			botLog( `filtered guesses: ${filterGuesses}, length: ${filterGuesses.length}` )
 
 			// compare guess letter to previous letter useage
 			// if letter hasn't been played filterGuesses is empty,
@@ -365,7 +365,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			}
 
 			var status = false;
-			botLog(('playing: ' + guessLetter));
+			botLog( `playing: ${guessLetter}` );
 			// check letter against each letter in puzzle, update puzzleView with letter guessed
 			for(let i = 0; i<(chosenWord.length); i++){
 				// if guess matches letter at index and is not a repeat and doesn't match puzzleWord
@@ -376,7 +376,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 					botLog(puzzleView);
 				} 
 			}
-			botLog('answer: ' + answer(puzzleview) + ' | status: ' + status)
+			botLog( `answer: ${answer(puzzleview)} | status: ${status}`)
 
 			// actions to take /////////////
 			// if user types 'quit' - converted to uppercase to remove any case issues (eg: iOS auto capitalise)
@@ -622,8 +622,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 # To do list - hangman bot
 
 ## Priority
-- tidy up code/notes
-- introduce new step for intro before ask for letter
+
 
 ### in no particular order
 - scoreboard ? / store results ?
@@ -655,60 +654,5 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 - post results of game into #clyde-bot-test channel 
 - include intro for theme of words
 - store game words and active status in object under name (allow multiple players at once?)
+- introduce new step for intro before ask for letter
 */
-
-
-// extra credit
-// weather bot!
-controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
-	// node requirement to use 'fetch'
-	require('isomorphic-fetch');
-	process.env.FORECAST_KEY;
-
-	// wildcard from slack message
-	var location = message.match[1];
-	var units = (param)=>{
-		return `?units=${param}`
-	};
-	fetch('http://maps.googleapis.com/maps/api/geocode/json?address=' + location).then( (response)=>{
-		//console.log(response)
-		return response.json()
-	}).then( (dataJSON)=>{
-		console.log('Lat:', dataJSON.results[0].geometry.location.lat);
-		console.log('Long:', dataJSON.results[0].geometry.location.lng);
-
-		// store lat and lng values form the json 
-		var lat = (dataJSON.results[0].geometry.location.lat).toString();
-		var lng = (dataJSON.results[0].geometry.location.lng).toString();
-
-		// concateneate them to use in the url
-		var location = lat + ',' + lng
-		// return location string up to the Promise
-		return location
-
-	// if location fetch successful - 'fulfilled/resolved' then fetch weather
-	// dataLocation is the value returned from previous 'then' 
-	}).then( (dataLocation)=>{
-		fetch('https://api.forecast.io/forecast/' + process.env.FORECAST_KEY + '/' + dataLocation + units('si'))
-		// if weather url is valid then...
-		// 'response' is the response from teh api call 
-		.then( (response)=>{
-				// add '.json()' suffix to parse response as JSON format
-				return response.json()
-				// dataJSON is the retiurn data from above
-			}).then( (dataJSON)=>{
-				// access individual key/values of json object
-				console.log('weather summary:', dataJSON.currently.summary);
-				console.log('current temperature:', dataJSON.currently.temperature);
-				console.log('current humidity:', dataJSON.currently.humidity);
-				// concatenate
-				var forecast = 'The current weather in ' + location + ' is ' + dataJSON.currently.summary + ' with a temperature of ' + dataJSON.currently.temperature + 'C'
-				// and post to slack
-				bot.reply(message, forecast)
-			})
-	// if location api call fails 'catch' it
-	}).catch( (dataLocation)=> {
-		// and print error message
-		console.log('ERROR!')
-	})
-})

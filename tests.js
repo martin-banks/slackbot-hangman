@@ -1,4 +1,57 @@
 
+// weather bot!
+controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
+	// node requirement to use 'fetch'
+	require('isomorphic-fetch');
+	process.env.FORECAST_KEY;
+
+	// wildcard from slack message
+	var location = message.match[1];
+	var units = (param)=>{
+		return `?units=${param}`
+	};
+	fetch('http://maps.googleapis.com/maps/api/geocode/json?address=' + location).then( (response)=>{
+		//console.log(response)
+		return response.json()
+	}).then( (dataJSON)=>{
+		console.log('Lat:', dataJSON.results[0].geometry.location.lat);
+		console.log('Long:', dataJSON.results[0].geometry.location.lng);
+
+		// store lat and lng values form the json 
+		var lat = (dataJSON.results[0].geometry.location.lat).toString();
+		var lng = (dataJSON.results[0].geometry.location.lng).toString();
+
+		// concateneate them to use in the url
+		var location = lat + ',' + lng
+		// return location string up to the Promise
+		return location
+
+	// if location fetch successful - 'fulfilled/resolved' then fetch weather
+	// dataLocation is the value returned from previous 'then' 
+	}).then( (dataLocation)=>{
+		fetch('https://api.forecast.io/forecast/' + process.env.FORECAST_KEY + '/' + dataLocation + units('si'))
+		// if weather url is valid then...
+		// 'response' is the response from teh api call 
+		.then( (response)=>{
+				// add '.json()' suffix to parse response as JSON format
+				return response.json()
+				// dataJSON is the retiurn data from above
+			}).then( (dataJSON)=>{
+				// access individual key/values of json object
+				console.log('weather summary:', dataJSON.currently.summary);
+				console.log('current temperature:', dataJSON.currently.temperature);
+				console.log('current humidity:', dataJSON.currently.humidity);
+				// concatenate
+				var forecast = 'The current weather in ' + location + ' is ' + dataJSON.currently.summary + ' with a temperature of ' + dataJSON.currently.temperature + 'C'
+				// and post to slack
+				bot.reply(message, forecast)
+			})
+	// if location api call fails 'catch' it
+	}).catch( (dataLocation)=> {
+		// and print error message
+		console.log('ERROR!')
+	})
+})
 
 
 
