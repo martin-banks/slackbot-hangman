@@ -90,7 +90,7 @@ var hangmanConfig = {
 		blue: '#3aa3e3'
 	},
 	restrictedAccess: {
-		status: true,
+		status: false,
 		users: [ 'amysimmons', 'martin', 'jess'],
 		title: "Access denied",
 		text: 'This game is still in development, you do not have access to play yet.'
@@ -104,7 +104,7 @@ hangmanConfig.javascript.words = hangmanConfig.javascript.words.map( (v,i,a) => 
 });
 
 // command to start a game
-var startGameCommand = 'test hangman';
+var startGameCommand = 'play hangman';
 
 // start hangman game
 controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
