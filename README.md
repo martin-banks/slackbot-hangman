@@ -34,6 +34,8 @@ Earlier versions had issues with multiple, simultaneous players. Recents updates
 - Repetition in replies could be streamlined
 - inconsistencies with concatenated strings and es6 templates in console.logs
 - separate bot replies or introduce a 'thinking' message to reduce gaps between user input and bot response.
+- Have not been able to change the user name when posting results to another channel - parked for now
+
 
 
 ### Tech in use
