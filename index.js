@@ -622,23 +622,21 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 # To do list - hangman bot
 
 ## Priority
-
+-
 
 ### in no particular order
-- scoreboard ? / store results ?
+- scoreboard ? / store results ? - need better storage option
 - different word groups/themes 
 - create your own quiz to challenge others / temp storage / factory function
 - start game in private chat from other channels
 - move into bot-test-clyde channel
 - attachment reponse as template function
 - random messages on right/wrong guess
-- capture player name in config and store puzzleWord as key/value
-- store player results in config object
 - add timeout to ask to find users to prevent memory leak
 - trade life for letter
 
 ## in prgress
-- all info into single game object 
+-
 
 ## Done
 - display timer in results
@@ -655,4 +653,9 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 - include intro for theme of words
 - store game words and active status in object under name (allow multiple players at once?)
 - introduce new step for intro before ask for letter
+- all info into single game object 
+- capture player name in config and store puzzleWord as key/value
+- store player results in config object
+
+
 */
