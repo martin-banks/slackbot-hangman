@@ -44,7 +44,7 @@ var r = (min, max)=> {
 	return min + (Math.floor(Math.random()*max))
 };
 // log if bot has started
-safeLog('bot start')
+safeLog('bot start');
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ hangmanConfig.javascript.words = hangmanConfig.javascript.words.map( (v,i,a) => 
 });
 
 // command to start a game
-var startGameCommand = 'play hangman';
+var startGameCommand = 'test hangman';
 
 // start hangman game
 controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
@@ -289,7 +289,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	}); // end of user verification
 
 	// convo to start game - showing game intro
-	showIntro = (response, convo)=>{
+	function showIntro(response, convo){
 		let intro = {
 			attachments: [
 				{
@@ -305,7 +305,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	};
 
 	// convo start if accessed denied
-	showAccessDenied = (response, convo)=>{
+	function showAccessDenied(response, convo){
 		let intro = {
 			attachments: [
 				{
@@ -321,7 +321,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	}
 	
 	// bot asks for letter
-	askLetter = (response, convo, puzzleview)=> {
+	function askLetter(response, convo, puzzleview){
 		let reply = {
 			'attachments': [
 				{
@@ -551,7 +551,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	}; // end of ask convo
 
 	// challenge someone else
-	challenge = (response, convo)=> {
+	function challenge(response, convo){
 		let reply = {
 			'attachments': [
 				{
@@ -568,7 +568,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	};
 
 	// ask user if they want to see who else is online
-	asktoChallenge = (response, convo)=> {
+	function asktoChallenge(response, convo){
 		let askToFuindUsers = {
 			'attachments': [
 				{
@@ -599,7 +599,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 	}
 
 	// quit game
-	quitGame = (response, convo)=>{
+	function quitGame(response, convo){
 		let reply = {
 			'attachments': [
 				{
