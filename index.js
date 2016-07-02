@@ -355,13 +355,18 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			// if letter hasn't been played filterGuesses is empty,
 			// and if entry doesn't match full puzzleWord
 			// -- change to filer/map?
+
+			// use indexOf
+
+			
+
 			if( filterGuesses.length === 0 && guessLetter !== chosenWord ){
-				for ( var i=0; i<alphabet.length; i++ ){
-					if ( guessLetter === alphabet[i]) {
-						hangmanConfig.users[response.user].alphabet[i] = ' ';
-						hangmanConfig.users[response.user].userGuesses.push(guessLetter);
-					} 
+				var alphaIndex = alphabet.indexOf(guessLetter)
+				if ( !!alphaIndex ){
+					hangmanConfig.users[response.user].alphabet[alphaIndex] = ' ';
+					hangmanConfig.users[response.user].userGuesses.push(guessLetter);
 				}
+
 			}
 
 			var status = false;
@@ -401,7 +406,7 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 			}
 
 			// if user guess whole word
-			else if (response.text.toUpperCase() === chosenWord ){
+			else if (response.text.toUpperCase() === chosenWord || answer(puzzleview) === chosenWord  ){
 				botLog(response.text);
 				safeLog('full answer correct ' + chosenWord );
 				stopGameTimer();
@@ -434,37 +439,6 @@ controller.hears( startGameCommand, 'direct_message', (bot, message)=>{
 				convo.next();
 			}
 
-			// win game by guessing last letter
-			else if ( answer(puzzleview) === chosenWord ) {
-				stopGameTimer();
-				getHumanUsers(); // run function to find all human users in group
-				safeLog( 'winner! guessed all correct letters' );
-				let reply = {
-					'attachments': [
-						{
-							'title': 'Winner!',
-							"fields": [
-								{
-									"title": "The word was:" ,
-									"value": `\_${chosenWord}\_`,
-									"short": true
-								},
-								{
-									"title": "You got it in" ,
-									"value": `${t} seconds`,
-									"short": true
-								},
-							],
-							'color': 'good',
-							"mrkdwn_in": markDownFields
-						}
-					]
-				}
-				convo.say(reply);
-				postToChannel( playerName, wrongGuessCount, true );
-				asktoChallenge(response, convo);
-				convo.next();
-			}
 
 			// guess correct letter
 			else if ( status && filterGuesses.length ===0) {

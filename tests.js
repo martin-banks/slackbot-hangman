@@ -1,4 +1,6 @@
 
+
+
 // weather bot!
 controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
 	// node requirement to use 'fetch'
@@ -17,7 +19,7 @@ controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
 		console.log('Lat:', dataJSON.results[0].geometry.location.lat);
 		console.log('Long:', dataJSON.results[0].geometry.location.lng);
 
-		// store lat and lng values form the json 
+		// store lat and lng values form the json
 		var lat = (dataJSON.results[0].geometry.location.lat).toString();
 		var lng = (dataJSON.results[0].geometry.location.lng).toString();
 
@@ -27,11 +29,11 @@ controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
 		return location
 
 	// if location fetch successful - 'fulfilled/resolved' then fetch weather
-	// dataLocation is the value returned from previous 'then' 
+	// dataLocation is the value returned from previous 'then'
 	}).then( (dataLocation)=>{
 		fetch('https://api.forecast.io/forecast/' + process.env.FORECAST_KEY + '/' + dataLocation + units('si'))
 		// if weather url is valid then...
-		// 'response' is the response from teh api call 
+		// 'response' is the response from teh api call
 		.then( (response)=>{
 				// add '.json()' suffix to parse response as JSON format
 				return response.json()
@@ -83,7 +85,7 @@ controller.hears(['what can you do'],['mention', 'direct_message'], function(bot
 			{
 				'title': 'Open the ---- doors',
 				'text': 'Clyde may or may not help depending what type of door you ask him to open'
-			}, 
+			},
 			{
 				'title': "@clydebot: what is the answer to the ultimate question",
 				'text': 'You can guess what comes next... \n Use toString() on a previously created varible to return a number (as a string) into the chat'
@@ -165,7 +167,7 @@ controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
 	if (doorType === 'pod bay') {
 		// if true, return this message and stop executing chain
 		return bot.reply(message, 'I\'m sorry, Dave. I\'m afraid I can\'t do that.');
-	} 
+	}
 	else if (doorType === 'blue') {
 		return bot.reply(message, {
 			'attachments': [
@@ -175,7 +177,7 @@ controller.hears(['open the (.*) doors'],['ambient'],function(bot,message) {
 				}
 			]
 		});
-	} 
+	}
 	// if none of the above are true retur this
 	return bot.reply(message, response[randomNumber(response.length)] );
 });
@@ -279,7 +281,7 @@ controller.on( 'user_typing', function(bot, message){
 		var r = randomNumber(10)
 		if (r>5){
 			return response[randomNumber((response.length))]
-		} 
+		}
 	}
 	bot.reply(message, responseNew() )
 } );
@@ -306,7 +308,7 @@ controller.hears(['user list'], ['ambient'], function(bot, message){
 				userList.push(userName);
 				bot.botkit.log('user name:', userName);
 				//bot.reply(message, userName );
-			}	
+			}
 		}
 	})
 });
@@ -326,16 +328,16 @@ function getHumanUsersPresence(id, results){
 
 // human users
 controller.hears('get human users', 'direct_message', function(bot, message){
-	
-	
+
+
 	bot.api.users.list({},function(err,response) {
 		if (err) {bot.botkit.log('something went wrong', err)};
 
 		//bot.botkit.log('slackbot:   ', response.members[(response.members.length)-1] );
 		var output = [];
-		
+
 		for (var i=0; i<response.members.length; i++){
-			
+
 			if (!response.members[i].is_bot && response.members[i].name !== 'slackbot'){
 				var humanUser = response.members[i].profile.first_name + ' ' + response.members[i].profile.last_name
 				//bot.botkit.log('user:   ', humanUser );
@@ -351,8 +353,8 @@ controller.hears('get human users', 'direct_message', function(bot, message){
 				output.push(humanUser)
 			}
 		}
-		
-		//bot.botkit.log(k);	
+
+		//bot.botkit.log(k);
 		//bot.reply(message, output.join('\n'));
 	});
 
@@ -360,7 +362,7 @@ controller.hears('get human users', 'direct_message', function(bot, message){
 
 controller.hears('show online users', 'direct_message', function(bot, message){
 	let k = Object.keys(p);
-	bot.botkit.log(k);	
+	bot.botkit.log(k);
 })
 
 
@@ -461,7 +463,7 @@ var userIDs = {};
 function makeUserList(){
 	bot.api.users.list({}, function(err, response){
 		for(var i=0; i<response.members.length; i++){
-			userIDs[response.members[i].name] = response.members[i].id	
+			userIDs[response.members[i].name] = response.members[i].id
 		}
 		//bot.botkit.log(' user', userIDs)
 	});
@@ -490,7 +492,7 @@ controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, messa
 		missingpersons = 0;
 		bot.api.users.list({},function(err,response) {
 			if (err) {bot.botkit.log('something went wrong', err);}
-			
+
 			for(var i=0; i<response.members.length; i++){
 				if ( response.members[i].id === queryId.users ){
 					var userImage = {
@@ -504,7 +506,7 @@ controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, messa
 					}
 					bot.reply(message,userImage);
 				}
-			}	
+			}
 		});
 
 	} else {
@@ -523,7 +525,7 @@ controller.hears('user (.*)', ['ambient', 'direct_message'], function(bot, messa
 
 /*  This is all wrong
 
-IDEA: To get list of online users: 
+IDEA: To get list of online users:
 	1. run function on user.list and push all users IDs and names into arrays
 	2. use controller.hears to then run users.presence with user ids
 	3. if returns active (?) use that index to push name and status to new array.
@@ -537,9 +539,9 @@ IDEA: To get list of online users:
 	var output = [];
 
 	bot.api.users.list({},function(err,response) {
-		
+
 		var count =(response.members.length)
-		
+
 		//bot.botkit.log(output);
 		//console.log('count', count);
 		var onlineUsers = [];
@@ -558,18 +560,18 @@ IDEA: To get list of online users:
 					if (!response.members[j].is_bot && response.members[j].name !== 'slackbot'){
 						userIDs.push(response.members[j].id);
 						//bot.botkit.log(isOnline(response.members[i].id));
-						
+
 						var humanUser = response.members[j].profile.first_name + ' ' + response.members[j].profile.last_name ;
 						output.push(humanUser);
 						//bot.botkit.log('user:   ', humanUser );
 					};
-					
+
 				}
 
 
 				bot.botkit.log('online???',i-1, output[i-1], response2.presence)
 				onlineUsers.push(response2.presence)
-				//bot.botkit.log('--online----', response2.presence);	
+				//bot.botkit.log('--online----', response2.presence);
 			});
 
 		}
@@ -591,14 +593,14 @@ controller.hears('pizzatime', 'direct_message', function(bot,message) {
 		//var k = JSON.stringify(convo);
 		//bot.botkit.log(k);
 
-		if(response.text === 'pineapple' ){ 
+		if(response.text === 'pineapple' ){
 			convo.say('No way, that\'s nasty.');
 			convo.next();
 		} else {
 			convo.say('Nice.');
 			askSize(response, convo);
 			convo.next();
-		}   
+		}
 
 	  });
 	}
@@ -766,4 +768,3 @@ controller.hears('create channel called', 'direct_message', function(bot, messag
 	});
 	bot.botkit.log('done')
 })
-
