@@ -5,12 +5,22 @@
   "description": "JS1: My First Slackbot",
   "main": "index.js",
   "scripts": {
-    "start": "node -r dotenv/config index.js"
+    "start": "node -r dotenv/config index.js",
+    "compile": "babel tests.js -o babel/babel.js && uglifyjs babel/babel.js -o babel/ugly.js -c -m",
+    "ugly": "uglifyjs babel/babel.js -o babel/ugly.js"
   },
   "license": "ISC",
   "dependencies": {
     "botkit": "^0.2.1",
     "dotenv": "^2.0.0",
     "isomorphic-fetch": "^2.2.1"
+  },
+  "devDependencies": {
+    "babel": "^6.5.2",
+    "babel-cli": "^6.10.1",
+    "babel-preset-es2015": "^6.9.0"
+  },
+  "babel":{
+     "presets": ["es2015"]
   }
 }
