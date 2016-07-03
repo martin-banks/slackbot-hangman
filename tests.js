@@ -1,6 +1,5 @@
 
 
-
 // weather bot!
 controller.hears('weather in (.*)', 'direct_mention', (bot, message)=>{
 	// node requirement to use 'fetch'
